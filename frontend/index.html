@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inducción Neuroadaptativa</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="mode-normal">
+    
+    <div id="view-welcome" class="view active">
+        <h1>Bienvenido al Sistema</h1>
+        <p class="extra-text">Esta es una plataforma de inducción diseñada para adaptarse a ti.</p>
+        <button id="btn-start" onclick="navigate('view-form')">Comenzar</button>
+    </div>
+
+    <div id="view-form" class="view hidden">
+        <h2>Ingresa tus datos</h2>
+        <input type="text" id="form-input" placeholder="Tu nombre">
+        <button onclick="navigate('view-instructions')">Siguiente</button>
+    </div>
+
+    <div id="view-instructions" class="view hidden">
+        <h2>Instrucciones Finales</h2>
+        <p>Lee detenidamente las normas del código de ética.</p>
+        <button id="btn-finish" onclick="navigate('view-welcome')">Finalizar</button>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/telemetry.js"></script>
+</body>
+</html>

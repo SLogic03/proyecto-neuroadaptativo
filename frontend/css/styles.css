@@ -1,0 +1,9 @@
+body { font-family: sans-serif; padding: 2rem; }
+
+/* Control de las vistas SPA */
+.view { display: none; }
+.view.active { display: block; }
+
+/* Modos de adaptación (se gatillarán por JS) */
+.mode-simplified .extra-text { display: none; }
+.mode-simplified button { transform: scale(1.1); font-weight: bold; background-color: #0c447c; color: white;}
