@@ -1,51 +1,103 @@
 // ==========================================
-// Módulo de Captura Conductual (web-user-behaviour)
+// Módulo de Captura Conductual Avanzada
 // ==========================================
 
-console.log("Módulo de telemetría conductual inicializado.");
+console.log("Módulo de telemetría conductual (con matemáticas) inicializado.");
 
-// Este buffer guardará los eventos temporalmente. 
-// En la Tarea 10 lo vaciaremos enviándolo por WebSocket.
 let telemetryBuffer = [];
 
-// 1. Captura Pasiva de Ratón (Movimiento)
-// Usamos 'passive: true' para no bloquear el renderizado del DOM (clave para el rendimiento)
+// Variables de estado para calcular deltas (diferencias)
+let lastX = null, lastY = null, lastTimeMouse = null;
+let lastVelocity = 0;
+let lastKeyTime = null;
+let hoverTimers = {}; // Diccionario para medir el Dwell Time
+
+// 1. Cinemática del Ratón (Velocidad y Aceleración)
 document.addEventListener('mousemove', (event) => {
+    const currentTime = Date.now();
+    let velocity = 0;
+    let acceleration = 0;
+
+    if (lastX !== null && lastTimeMouse !== null) {
+        const deltaTime = currentTime - lastTimeMouse;
+
+        if (deltaTime > 0) { // Evitamos divisiones por cero
+            // Teorema de Pitágoras para la distancia euclidiana
+            const distance = Math.sqrt(Math.pow(event.clientX - lastX, 2) + Math.pow(event.clientY - lastY, 2));
+
+            velocity = distance / deltaTime; // px/ms
+            acceleration = (velocity - lastVelocity) / deltaTime; // px/ms^2
+        }
+    }
+
     const mouseData = {
-        type: 'mousemove',
+        type: 'mouse_kinematics',
         x: event.clientX,
         y: event.clientY,
-        timestamp: Date.now()
+        v: parseFloat(velocity.toFixed(4)), // Redondeamos para no saturar la BD
+        a: parseFloat(acceleration.toFixed(6)),
+        timestamp: currentTime
     };
+
     telemetryBuffer.push(mouseData);
 
-    // Nota: El console.log de mousemove está comentado por defecto 
-    // porque genera miles de registros por segundo y saturaría tu consola.
-    // console.log("Mouse movido:", mouseData); 
+    // Actualizamos el estado para el siguiente fotograma
+    lastX = event.clientX;
+    lastY = event.clientY;
+    lastTimeMouse = currentTime;
+    lastVelocity = velocity;
 }, { passive: true });
 
-// 2. Captura Pasiva de Ratón (Clics)
-document.addEventListener('mousedown', (event) => {
-    const clickData = {
-        type: 'click',
-        button: event.button, // 0 = Izquierdo, 1 = Medio, 2 = Derecho
-        x: event.clientX,
-        y: event.clientY,
-        timestamp: Date.now()
-    };
-    telemetryBuffer.push(clickData);
-    console.log("Clic registrado:", clickData); // Este sí lo mostramos para testear
-}, { passive: true });
-
-// 3. Captura Pasiva de Teclado
+// 2. Latencia de Teclado (Tiempo entre teclas)
 document.addEventListener('keydown', (event) => {
-    // Por seguridad y ética, NO guardamos la tecla exacta que pulsa (ej: contraseñas),
-    // solo guardamos el código físico de la tecla para medir ritmos y latencias.
+    const currentTime = Date.now();
+    let latency = 0;
+
+    if (lastKeyTime !== null) {
+        latency = currentTime - lastKeyTime; // Milisegundos desde la última tecla
+    }
+
     const keyData = {
-        type: 'keypress',
+        type: 'keystroke_latency',
         key_code: event.code,
-        timestamp: Date.now()
+        latency_ms: latency,
+        timestamp: currentTime
     };
+
     telemetryBuffer.push(keyData);
-    console.log("Tecla pulsada:", keyData);
+    console.log("Latencia de tipeo:", latency, "ms"); // Log de prueba
+
+    lastKeyTime = currentTime;
 }, { passive: true });
+
+// 3. Dwell Time (Tiempo de duda/permanencia sobre botones e inputs)
+// Detectamos cuando el usuario pone el ratón encima de un elemento interactivo
+document.querySelectorAll('button, input').forEach(element => {
+
+    // Inicia el cronómetro al entrar
+    element.addEventListener('mouseenter', (e) => {
+        const targetId = e.target.id || 'elemento_sin_id';
+        hoverTimers[targetId] = Date.now();
+    }, { passive: true });
+
+    // Detiene el cronómetro al salir y calcula el Dwell Time
+    element.addEventListener('mouseleave', (e) => {
+        const targetId = e.target.id || 'elemento_sin_id';
+
+        if (hoverTimers[targetId]) {
+            const dwellTime = Date.now() - hoverTimers[targetId];
+
+            const dwellData = {
+                type: 'dwell_time',
+                element_id: targetId,
+                duration_ms: dwellTime,
+                timestamp: Date.now()
+            };
+
+            telemetryBuffer.push(dwellData);
+            console.log(`Dwell Time en [${targetId}]:`, dwellTime, "ms"); // Log de prueba
+
+            delete hoverTimers[targetId]; // Limpiamos la memoria
+        }
+    }, { passive: true });
+});
