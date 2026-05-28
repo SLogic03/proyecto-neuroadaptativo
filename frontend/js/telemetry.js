@@ -7,6 +7,8 @@ console.log("Módulo de telemetría conductual (con matemáticas) inicializado."
 // Conexión WebSocket al backend (a través de Nginx en puerto 80)
 const ws = new WebSocket('ws://localhost/ws');
 ws.onopen = () => console.log("WebSocket conectado al backend.");
+ws.onerror = (err) => console.error("WebSocket error:", err);
+ws.onclose = (e) => console.error(`WebSocket cerrado: code=${e.code} reason=${e.reason} wasClean=${e.wasClean}`);
 
 let telemetryBuffer = [];
 
