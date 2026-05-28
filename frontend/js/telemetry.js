@@ -4,6 +4,10 @@
 
 console.log("Módulo de telemetría conductual (con matemáticas) inicializado.");
 
+// Conexión WebSocket al backend (a través de Nginx en puerto 80)
+const ws = new WebSocket('ws://localhost/ws');
+ws.onopen = () => console.log("WebSocket conectado al backend.");
+
 let telemetryBuffer = [];
 
 // Variables de estado para calcular deltas (diferencias)
@@ -101,3 +105,13 @@ document.querySelectorAll('button, input').forEach(element => {
         }
     }, { passive: true });
 });
+
+// ==========================================
+// Envío por lotes al backend vía WebSocket
+// ==========================================
+setInterval(() => {
+    if (telemetryBuffer.length > 0 && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(telemetryBuffer));
+        telemetryBuffer = [];
+    }
+}, 500);
