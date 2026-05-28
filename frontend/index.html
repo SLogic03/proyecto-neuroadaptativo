@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inducción Neuroadaptativa</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@11.1.1/dist/css/shepherd.css"/>
+    
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="mode-normal">
@@ -17,16 +20,19 @@
     <div id="view-form" class="view hidden">
         <h2>Ingresa tus datos</h2>
         <input type="text" id="form-input" placeholder="Tu nombre">
-        <button onclick="navigate('view-instructions')">Siguiente</button>
+        <button id="btn-next" onclick="navigate('view-instructions')">Siguiente</button>
     </div>
 
     <div id="view-instructions" class="view hidden">
         <h2>Instrucciones Finales</h2>
-        <p>Lee detenidamente las normas del código de ética.</p>
+        <p id="text-rules">Lee detenidamente las normas del código de ética.</p>
         <button id="btn-finish" onclick="navigate('view-welcome')">Finalizar</button>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/shepherd.js@11.1.1/dist/js/shepherd.min.js"></script>
+    
     <script src="js/app.js"></script>
     <script src="js/telemetry.js"></script>
+    <script src="js/tour.js"></script>
 </body>
 </html>
