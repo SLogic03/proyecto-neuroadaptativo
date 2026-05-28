@@ -1,0 +1,16 @@
+{
+  "name": "neuroadaptativo-frontend",
+  "version": "1.0.0",
+  "description": "Interfaz y captura de telemetría pasiva para plataforma neuroadaptativa",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo \"Proyecto Vanilla JS - Abrir index.html directamente o usar Live Server\""
+  },
+  "author": "Jose Sebastian Lojan Vicuña",
+  "license": "MIT",
+  "dependencies": {
+    "shepherd.js": "^11.1.1",
+    "tailwindcss": "^3.4.0"
+  },
+  "notes": "Nota de Arquitectura: Las dependencias se consumen vía CDN en el HTML para garantizar máxima ligereza en la captura pasiva de eventos (DOM)."
+}
