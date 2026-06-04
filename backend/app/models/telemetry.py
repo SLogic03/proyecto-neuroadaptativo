@@ -28,6 +28,10 @@ class TelemetryEvent(BaseModel):
     element_id: Optional[str] = None
     duration_ms: Optional[int] = None
 
+    # aggregate / ML-relevant
+    idle_time: Optional[float] = None
+    click_rate: Optional[int] = None
+
     class Config:
         extra = "allow"  # Acepta campos extra sin error
 
