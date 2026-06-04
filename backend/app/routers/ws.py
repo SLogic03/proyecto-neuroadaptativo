@@ -119,10 +119,14 @@ async def websocket_telemetry(websocket: WebSocket):
                     X_input = np.array(
                         [[features[col] for col in FEATURE_COLS]]
                     )
-                    prediction = int(ml_model.predict(X_input)[0])
+                    print(f"[DEBUG] Features del usuario: {X_input}")
+                    
+                    probabilidades = ml_model.predict_proba(X_input)[0]
+                    prob_estres = probabilidades[1]
+                    prediction = 1 if prob_estres > 0.1 else 0
                     cognitive_state = "Estres" if prediction == 1 else "Normal"
 
-                    print(f"[WS][ML] Prediccion: {prediction} -> {cognitive_state}")
+                    print(f"[WS][ML] Probabilidad de Estrés: {prob_estres:.2f} -> Predicción ajustada: {prediction} ({cognitive_state})")
 
                     # Llamar a Gemini para directivas DOM
                     directives = await get_dom_directives(
