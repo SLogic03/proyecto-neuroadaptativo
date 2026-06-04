@@ -12,28 +12,9 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        primary:             '#6C5CE7',
-                        'primary-light':     '#A29BFE',
-                        'primary-dark':      '#4834D4',
-                        secondary:           '#00CEC9',
-                        'secondary-light':   '#81ECEC',
-                        accent:              '#FD79A8',
-                        'accent-warm':       '#FDCB6E',
-                        'surface':           '#0F0F1A',
-                        'surface-card':      '#1A1A2E',
-                        'surface-container': '#16213E',
-                        'surface-elevated':  '#222244',
-                        'on-surface':        '#E8E8F0',
-                        'on-surface-muted':  '#8888AA',
-                        'border-subtle':     '#2A2A4A',
-                        success:             '#00B894',
-                        warning:             '#FDCB6E',
-                        danger:              '#E17055',
-                    },
                     fontFamily: {
-                        'serif-display': ['"Source Serif 4"', 'Georgia', 'serif'],
-                        'sans':          ['Inter', 'system-ui', 'sans-serif'],
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'serif': ['"Source Serif 4"', 'Georgia', 'serif'],
                     },
                 },
             },
@@ -45,23 +26,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="css/styles.css">
-
     <style>
-        body { background-color: #0F0F1A; }
-
-        .glass-card {
-            background: rgba(26, 26, 46, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(108, 92, 231, 0.12);
+        :root {
+            /* Dynamic variables controlled by LLM via JS */
+            --dyn-font-size: 1.125rem;
+            --dyn-line-height: 1.75;
+            --dyn-letter-spacing: normal;
+            --dyn-bg-color: #ffffff;
+            --dyn-text-color: #1e293b;
         }
 
-        /* ── Scrollbar ── */
+        body { 
+            background-color: #f8fafc; /* slate-50 */ 
+            overflow-x: hidden;
+        }
+        
+        /* Minimalist Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #2A2A4A; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6C5CE7; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         .pulse-dot {
             animation: pulse-dot 2s ease-in-out infinite;
@@ -71,453 +55,165 @@
             50%      { opacity: 0.5; transform: scale(1.4); }
         }
 
-        /* ═══════════════════════════════════════════════
-           AGENTIC MODE TRANSITIONS
-           Smooth, professional state transitions
-        ═══════════════════════════════════════════════ */
-
-        /* Base transitions for all animated elements */
-        .hide-in-agentic {
-            opacity: 1;
-            max-height: 2000px;
-            transform: translateY(0);
-            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                        max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-                        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                        margin 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
-        }
-
-        .agentic-show {
-            opacity: 0;
-            max-height: 0;
-            transform: translateY(20px) scale(0.97);
-            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
-                        max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s,
-                        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
-            overflow: hidden;
+        /* Reading focus guide styles */
+        #reading-focus-guide {
+            position: absolute;
+            left: -2rem;
+            right: -2rem;
+            height: 3em;
+            background: rgba(59, 130, 246, 0.05); /* very soft blue */
+            border-left: 4px solid #3b82f6;
             pointer-events: none;
+            transition: top 0.2s ease-out;
+            z-index: 10;
         }
 
-        /* When .agentic-mode is active */
-        .agentic-mode .hide-in-agentic {
-            opacity: 0;
-            max-height: 0;
-            transform: translateY(-10px);
-            margin-top: 0;
-            margin-bottom: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            pointer-events: none;
+        /* Reading content dynamic application */
+        #reading-content {
+            font-size: var(--dyn-font-size);
+            line-height: var(--dyn-line-height);
+            letter-spacing: var(--dyn-letter-spacing);
+            background-color: var(--dyn-bg-color);
+            color: var(--dyn-text-color);
+            transition: all 0.5s ease-in-out;
         }
 
-        .agentic-mode .agentic-show {
-            opacity: 1;
-            max-height: 2000px;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
+        #reading-content p {
+            margin-bottom: 1.5em;
         }
 
-        /* Stress pulse animation on the border */
-        @keyframes stress-pulse {
-            0%, 100% { border-color: rgba(225, 112, 85, 0.3); }
-            50%      { border-color: rgba(225, 112, 85, 0.7); }
-        }
-        .agentic-mode .reading-container {
-            animation: stress-pulse 2s ease-in-out infinite;
-        }
-
-        /* Focus ring for form fields */
-        .agent-input:focus {
-            outline: none;
-            border-color: #6C5CE7;
-            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
-        }
-
-        /* Reading text styles */
-        .reading-prose p {
-            margin-bottom: 1.25rem;
-            line-height: 1.85;
-        }
-        .reading-prose p:last-child {
-            margin-bottom: 0;
+        /* Sidebar transition for agentic mode hiding */
+        #sidebar {
+            transition: transform 0.4s ease-in-out;
         }
     </style>
 </head>
 
-<body class="font-sans text-on-surface antialiased min-h-screen">
+<body class="font-sans text-slate-800 antialiased min-h-screen">
 
-    <div class="flex min-h-screen">
+    <div class="flex min-h-screen relative">
 
-        <!-- ═══════════════════════════════════════════════
-             SIDEBAR
-        ═══════════════════════════════════════════════ -->
-        <aside class="w-64 bg-surface-card border-r border-border-subtle flex flex-col fixed h-full z-30">
-            <div class="px-6 py-6 border-b border-border-subtle">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-30 transform translate-x-0">
+            <!-- Brand -->
+            <div class="px-8 py-8 border-b border-slate-100">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-primary/20">N</div>
+                    <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-lg">N</div>
                     <div>
-                        <h1 class="text-sm font-semibold tracking-wide text-on-surface">NeuroAdapt</h1>
-                        <p class="text-[10px] text-on-surface-muted tracking-widest uppercase">Learning Platform</p>
+                        <h1 class="text-base font-semibold tracking-tight text-slate-900">NeuroAdapt</h1>
+                        <p class="text-xs text-slate-500 tracking-wider uppercase">Learning</p>
                     </div>
                 </div>
             </div>
 
-            <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
-                <p class="px-3 mb-3 text-[10px] font-semibold tracking-widest uppercase text-on-surface-muted">Main</p>
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
+                <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-slate-400">Main</p>
 
-                <a href="dashboard.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-elevated/50 font-medium text-sm transition-all duration-200">
-                    <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
                     Dashboard
                 </a>
 
-                <a href="courses.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-elevated/50 font-medium text-sm transition-all duration-200">
-                    <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+                <a href="courses.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
                     My Courses
                 </a>
 
-                <a href="reading.html" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary-light font-medium text-sm transition-all duration-200 relative before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-[3px] before:h-[60%] before:rounded-r before:bg-gradient-to-b before:from-primary before:to-primary-light">
-                    <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a3.375 3.375 0 01-4.06.52L12 17.25l-.47.24a3.375 3.375 0 01-4.06-.52L5 14.5m14 0V19a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 19v-4.5"/></svg>
+                <a href="reading.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-900 font-medium text-sm transition-all">
+                    <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a3.375 3.375 0 01-4.06.52L12 17.25l-.47.24a3.375 3.375 0 01-4.06-.52L5 14.5m14 0V19a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 19v-4.5"/></svg>
                     Neuro Module
-                </a>
-
-                <div class="my-4 border-t border-border-subtle"></div>
-                <p class="px-3 mb-3 text-[10px] font-semibold tracking-widest uppercase text-on-surface-muted">System</p>
-
-                <a href="index.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-muted hover:text-on-surface hover:bg-surface-elevated/50 font-medium text-sm transition-all duration-200">
-                    <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
-                    Induction
                 </a>
             </nav>
 
-            <div class="p-4 border-t border-border-subtle">
+            <div class="p-6 border-t border-slate-100 bg-slate-50/50">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-accent-warm flex items-center justify-center text-xs font-bold text-surface">SL</div>
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700">SL</div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-medium text-on-surface truncate">S. Lojan</p>
-                        <p class="text-[10px] text-on-surface-muted">Student</p>
+                        <p class="text-sm font-medium text-slate-900 truncate">S. Lojan</p>
+                        <p class="text-xs text-slate-500">Student</p>
                     </div>
-                    <div class="w-2 h-2 rounded-full bg-success pulse-dot" title="Online"></div>
                 </div>
             </div>
         </aside>
 
-        <!-- ═══════════════════════════════════════════════
-             MAIN CONTENT
-        ═══════════════════════════════════════════════ -->
-        <main class="flex-1 ml-64 p-8" id="reading-main">
+        <!-- MAIN CONTENT (Centered Reading Container) -->
+        <main id="reading-container" class="flex-1 ml-64 p-10 lg:p-12 transition-all duration-500 max-w-3xl mx-auto w-full">
 
-            <!-- Header -->
-            <header class="mb-6 flex items-end justify-between">
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <a href="courses.html" class="text-on-surface-muted hover:text-primary-light transition-colors duration-200 text-xs">My Courses</a>
-                        <svg class="w-3 h-3 text-on-surface-muted/50" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-                        <span class="text-xs text-primary-light">Institutional Regulations</span>
-                    </div>
-                    <h2 class="text-3xl font-serif-display font-bold text-on-surface tracking-tight">Section 4.1.a</h2>
+            <!-- Breadcrumb & Header -->
+            <header class="mb-10">
+                <div class="flex items-center gap-2 mb-3">
+                    <a href="courses.html" class="text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium">My Courses</a>
+                    <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+                    <span class="text-sm font-medium text-blue-600">Institutional Regulations</span>
                 </div>
-                <div class="flex items-center gap-3">
-                    <!-- Neuro Status Indicator -->
-                    <div id="neuro-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/10 border border-success/20 transition-all duration-500">
-                        <div class="w-2 h-2 rounded-full bg-success pulse-dot" id="neuro-dot"></div>
-                        <span class="text-xs font-medium text-success" id="neuro-label">Normal</span>
+                <h2 class="text-4xl font-serif font-bold text-slate-900 tracking-tight leading-snug">
+                    Artículo 4.1.a — Derechos y Obligaciones del Estudiante
+                </h2>
+                
+                <!-- Neuro Status -->
+                <div class="mt-6 flex items-center justify-between border-b border-slate-200 pb-6">
+                    <div id="neuro-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 transition-all duration-300">
+                        <div class="w-2 h-2 rounded-full bg-slate-400" id="neuro-dot"></div>
+                        <span class="text-xs font-semibold text-slate-600" id="neuro-label">NeuroAdapt Pending</span>
                     </div>
-                    <!-- Stress Trigger -->
-                    <button id="btn-stress" onclick="toggleAgenticMode()"
-                            class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-danger to-accent rounded-lg shadow-md shadow-danger/20 hover:shadow-lg hover:shadow-danger/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                    <button id="btn-stress" onclick="document.body.classList.toggle('agentic-mode')"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-lg shadow-sm transition-all">
                         Simular Estrés
                     </button>
                 </div>
             </header>
 
-            <!-- ── Reading Container ── -->
-            <div id="reading-container" class="reading-container grid grid-cols-12 gap-6 transition-all duration-500">
+            <!-- Text Content -->
+            <article id="reading-content" class="relative font-serif rounded-2xl p-8 shadow-sm border border-slate-100">
+                
+                <!-- Focus Guide (Hidden by default, can be toggled by LLM via telemetry.js) -->
+                <div id="reading-focus-guide" class="hidden"></div>
 
-                <!-- LEFT: Reading Content -->
-                <div class="col-span-12 lg:col-span-8">
+                <p>Todo estudiante admitido en la institución adquiere, desde el momento de su matriculación formal, un conjunto de <strong>derechos inalienables</strong> y <strong>obligaciones correlativas</strong> que constituyen el marco normativo fundamental de su relación con la comunidad académica. Estos derechos y obligaciones se encuentran consagrados en el presente reglamento y en las disposiciones complementarias que el Consejo Universitario apruebe para su desarrollo.</p>
 
-                    <!-- Progress Bar (top of reading) -->
-                    <div class="glass-card rounded-xl p-3 mb-5 flex items-center gap-4">
-                        <span class="text-[10px] font-semibold uppercase tracking-widest text-on-surface-muted shrink-0">Reading Progress</span>
-                        <div class="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
-                            <div class="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-700" style="width: 35%" id="reading-progress"></div>
-                        </div>
-                        <span class="text-xs font-bold text-primary-light shrink-0">35%</span>
-                    </div>
+                <p>Entre los derechos fundamentales se incluyen: el derecho a recibir una formación académica de calidad, conforme a los planes de estudio vigentes y las metodologías pedagógicas aprobadas; el derecho a ser evaluado de manera justa, transparente y objetiva, con conocimiento previo de los criterios de evaluación aplicables; el derecho a participar en los órganos de gobierno estudiantil y a ejercer la representación que le corresponda según los mecanismos establecidos; y el derecho a acceder a los servicios institucionales de biblioteca, laboratorio, tutorías y bienestar estudiantil.</p>
 
-                    <!-- Dense Text (hidden in agentic mode) -->
-                    <article id="dense-text" class="hide-in-agentic glass-card rounded-2xl p-8 lg:p-10">
-                        <div class="reading-prose font-serif-display text-on-surface/90 text-base leading-relaxed">
+                <p>Las obligaciones del estudiante comprenden, de manera no exhaustiva: la asistencia regular a las actividades académicas programadas, con un mínimo del <strong>80% de presencialidad</strong> verificable por los sistemas de control institucional; el cumplimiento íntegro de los plazos de entrega y evaluación establecidos por cada cátedra; la preservación del patrimonio material e inmaterial de la institución, incluyendo equipos, instalaciones, material bibliográfico y recursos digitales; y el respeto incondicional a las normas de convivencia, integridad académica y conducta ética.</p>
 
-                            <h3 class="text-xl font-bold text-on-surface mb-6 flex items-center gap-3">
-                                <span class="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                                    <span class="text-sm font-bold text-primary-light">§</span>
-                                </span>
-                                Artículo 4.1.a — Derechos y Obligaciones del Estudiante
-                            </h3>
+                <p>El incumplimiento reiterado de las obligaciones aquí estipuladas podrá dar lugar a la aplicación de sanciones disciplinarias que van desde la amonestación verbal hasta la separación temporal o definitiva de la institución, según la gravedad y reincidencia de la falta, conforme al procedimiento establecido en el Título VII del presente reglamento. Todo proceso disciplinario garantizará el derecho de defensa del estudiante y el principio de proporcionalidad en la sanción.</p>
 
-                            <p>Todo estudiante admitido en la institución adquiere, desde el momento de su matriculación formal, un conjunto de <strong class="text-on-surface font-semibold">derechos inalienables</strong> y <strong class="text-on-surface font-semibold">obligaciones correlativas</strong> que constituyen el marco normativo fundamental de su relación con la comunidad académica. Estos derechos y obligaciones se encuentran consagrados en el presente reglamento y en las disposiciones complementarias que el Consejo Universitario apruebe para su desarrollo.</p>
+                <p>La institución se compromete a proporcionar los medios necesarios para que el estudiante pueda ejercer plenamente sus derechos, incluyendo la adecuación de infraestructura, la capacitación del personal docente y administrativo, y la implementación de mecanismos eficaces de retroalimentación y mejora continua en los procesos de enseñanza-aprendizaje.</p>
+            </article>
 
-                            <p>Entre los derechos fundamentales se incluyen: el derecho a recibir una <em class="text-primary-light/80">formación académica de calidad</em>, conforme a los planes de estudio vigentes y las metodologías pedagógicas aprobadas; el derecho a ser evaluado de manera justa, transparente y objetiva, con conocimiento previo de los criterios de evaluación aplicables; el derecho a participar en los órganos de gobierno estudiantil y a ejercer la representación que le corresponda según los mecanismos establecidos; y el derecho a acceder a los servicios institucionales de biblioteca, laboratorio, tutorías y bienestar estudiantil.</p>
-
-                            <p>Las obligaciones del estudiante comprenden, de manera no exhaustiva: la asistencia regular a las actividades académicas programadas, con un mínimo del <strong class="text-on-surface font-semibold">80% de presencialidad</strong> verificable por los sistemas de control institucional; el cumplimiento íntegro de los plazos de entrega y evaluación establecidos por cada cátedra; la preservación del patrimonio material e inmaterial de la institución, incluyendo equipos, instalaciones, material bibliográfico y recursos digitales; y el respeto incondicional a las normas de convivencia, integridad académica y conducta ética.</p>
-
-                            <p>El incumplimiento reiterado de las obligaciones aquí estipuladas podrá dar lugar a la aplicación de sanciones disciplinarias que van desde la <span class="text-warning">amonestación verbal</span> hasta la <span class="text-danger">separación temporal o definitiva</span> de la institución, según la gravedad y reincidencia de la falta, conforme al procedimiento establecido en el Título VII del presente reglamento. Todo proceso disciplinario garantizará el derecho de defensa del estudiante y el principio de proporcionalidad en la sanción.</p>
-
-                            <p>La institución se compromete a proporcionar los medios necesarios para que el estudiante pueda ejercer plenamente sus derechos, incluyendo la adecuación de infraestructura, la capacitación del personal docente y administrativo, y la implementación de mecanismos eficaces de <em class="text-secondary/80">retroalimentación y mejora continua</em> en los procesos de enseñanza-aprendizaje.</p>
-                        </div>
-                    </article>
-
-                    <!-- ═══ AGENT PANEL (visible only in agentic-mode) ═══ -->
-                    <div id="agent-panel" class="agentic-show">
-                        <div class="glass-card rounded-2xl p-8 border-danger/30">
-                            <!-- Alert Banner -->
-                            <div class="flex items-start gap-3 p-4 rounded-xl bg-danger/10 border border-danger/20 mb-6">
-                                <div class="w-8 h-8 rounded-lg bg-danger/20 flex items-center justify-center shrink-0 mt-0.5">
-                                    <svg class="w-4 h-4 text-danger" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-semibold text-danger mb-0.5">Estrés cognitivo detectado</p>
-                                    <p class="text-xs text-on-surface-muted leading-relaxed">El sistema ha detectado indicadores de sobrecarga cognitiva. Se ha activado el modo de asistencia agéntica para simplificar la experiencia de lectura.</p>
-                                </div>
-                            </div>
-
-                            <!-- Simplified Summary -->
-                            <h4 class="text-lg font-serif-display font-bold text-on-surface mb-4 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>
-                                Resumen Simplificado por IA
-                            </h4>
-                            <div class="space-y-3 mb-6">
-                                <div class="flex items-start gap-3 p-3 rounded-lg bg-surface-elevated/50 border border-border-subtle">
-                                    <span class="text-secondary font-bold text-sm mt-0.5">1.</span>
-                                    <p class="text-sm text-on-surface/80 leading-relaxed">Tienes <strong class="text-on-surface">derechos</strong>: formación de calidad, evaluación justa, participación estudiantil y acceso a servicios.</p>
-                                </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg bg-surface-elevated/50 border border-border-subtle">
-                                    <span class="text-secondary font-bold text-sm mt-0.5">2.</span>
-                                    <p class="text-sm text-on-surface/80 leading-relaxed">Tienes <strong class="text-on-surface">obligaciones</strong>: asistir al 80%, cumplir plazos, cuidar las instalaciones y respetar las normas éticas.</p>
-                                </div>
-                                <div class="flex items-start gap-3 p-3 rounded-lg bg-surface-elevated/50 border border-border-subtle">
-                                    <span class="text-secondary font-bold text-sm mt-0.5">3.</span>
-                                    <p class="text-sm text-on-surface/80 leading-relaxed">Si incumples, hay <strong class="text-on-surface">sanciones</strong> progresivas, desde amonestación hasta separación, siempre con derecho a defensa.</p>
-                                </div>
-                            </div>
-
-                            <!-- Question Prompt -->
-                            <div class="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                                <p class="text-sm font-medium text-on-surface mb-1">¿Tienes alguna duda sobre esta sección?</p>
-                                <p class="text-xs text-on-surface-muted mb-3">Escribe tu pregunta y el asistente IA te responderá.</p>
-                                <div class="flex gap-2">
-                                    <input id="agent-question" type="text" placeholder="Ej: ¿Qué pasa si falto más del 20%?"
-                                           class="agent-input flex-1 px-3 py-2 text-sm bg-surface-elevated border border-border-subtle rounded-lg text-on-surface placeholder-on-surface-muted/50 transition-all duration-200">
-                                    <button id="btn-ask-agent" class="px-4 py-2 text-xs font-semibold text-white bg-primary hover:bg-primary-dark rounded-lg transition-all duration-200 shadow-md shadow-primary/20 shrink-0">
-                                        Preguntar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Agent Panel Placeholder (For simplified summary injection if needed) -->
+            <div id="agent-panel" class="mt-8 hidden p-6 rounded-2xl bg-blue-50 border border-blue-100">
+                <h4 class="text-sm font-bold text-blue-800 mb-3 uppercase tracking-wider">💡 Resumen Simplificado</h4>
+                <div id="agent-summary-content" class="text-blue-900 text-sm space-y-2">
+                    <!-- LLM injects summary here -->
                 </div>
+            </div>
 
-                <!-- RIGHT: Sidebar Panel -->
-                <div class="col-span-12 lg:col-span-4 space-y-5">
-
-                    <!-- Neuro Metrics -->
-                    <div class="glass-card rounded-2xl p-5">
-                        <p class="text-xs font-semibold tracking-widest uppercase text-on-surface-muted mb-4">Live Neuro Metrics</p>
-                        <div class="space-y-3">
-                            <div>
-                                <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-on-surface-muted">Cognitive Load</span>
-                                    <span class="font-medium transition-all duration-500" id="metric-load-label">Low</span>
-                                </div>
-                                <div class="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-success to-secondary-light transition-all duration-700" style="width:25%" id="metric-load-bar"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-on-surface-muted">Mouse Velocity</span>
-                                    <span class="font-medium text-secondary" id="metric-velocity-label">0.42 px/ms</span>
-                                </div>
-                                <div class="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-secondary to-secondary-light transition-all duration-700" style="width:42%" id="metric-velocity-bar"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-on-surface-muted">Key Latency</span>
-                                    <span class="font-medium text-primary-light" id="metric-latency-label">120 ms</span>
-                                </div>
-                                <div class="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-primary to-primary-light transition-all duration-700" style="width:35%" id="metric-latency-bar"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-xs mb-1">
-                                    <span class="text-on-surface-muted">Stress Index</span>
-                                    <span class="font-medium transition-all duration-500" id="metric-stress-label">0.12</span>
-                                </div>
-                                <div class="w-full h-1.5 bg-surface-elevated rounded-full overflow-hidden">
-                                    <div class="h-full rounded-full transition-all duration-700" style="width:12%; background: linear-gradient(to right, #00B894, #81ECEC);" id="metric-stress-bar"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Comprehension Form -->
-                    <div class="glass-card rounded-2xl p-5">
-                        <p class="text-xs font-semibold tracking-widest uppercase text-on-surface-muted mb-4">Comprehension Check</p>
-                        <form id="form-comprehension" class="space-y-3" onsubmit="return false;">
-                            <div>
-                                <label for="field-key-concept" class="block text-xs font-medium text-on-surface mb-1.5">
-                                    Key Concept <span class="text-danger">*</span>
-                                </label>
-                                <input id="field-key-concept" type="text" required placeholder="Main idea of this section"
-                                       class="agent-input w-full px-3 py-2 text-sm bg-surface-elevated border border-border-subtle rounded-lg text-on-surface placeholder-on-surface-muted/50 transition-all duration-200">
-                            </div>
-                            <div>
-                                <label for="field-doubts" class="block text-xs font-medium text-on-surface mb-1.5">
-                                    Doubts or Questions
-                                </label>
-                                <textarea id="field-doubts" rows="3" placeholder="Anything unclear?"
-                                          class="agent-input w-full px-3 py-2 text-sm bg-surface-elevated border border-border-subtle rounded-lg text-on-surface placeholder-on-surface-muted/50 resize-none transition-all duration-200"></textarea>
-                            </div>
-                            <div>
-                                <label for="field-confidence" class="block text-xs font-medium text-on-surface mb-1.5">
-                                    Confidence Level <span class="text-danger">*</span>
-                                </label>
-                                <select id="field-confidence" required
-                                        class="agent-input w-full px-3 py-2 text-sm bg-surface-elevated border border-border-subtle rounded-lg text-on-surface transition-all duration-200">
-                                    <option value="" class="text-on-surface-muted">Select...</option>
-                                    <option value="high">High — I understand well</option>
-                                    <option value="medium">Medium — Some parts are unclear</option>
-                                    <option value="low">Low — I need help</option>
-                                </select>
-                            </div>
-                            <button id="btn-submit-check" type="submit"
-                                    class="w-full py-2.5 text-xs font-semibold text-white bg-gradient-to-r from-primary to-primary-dark rounded-lg shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
-                                Submit Check
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Section Navigation -->
-                    <div class="glass-card rounded-2xl p-5">
-                        <p class="text-xs font-semibold tracking-widest uppercase text-on-surface-muted mb-3">Sections</p>
-                        <div class="space-y-1.5">
-                            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10 text-success text-xs font-medium">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                                4.1 — Introduction
-                            </div>
-                            <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary-light text-xs font-medium border border-primary/20">
-                                <div class="w-1.5 h-1.5 rounded-full bg-primary-light pulse-dot"></div>
-                                4.1.a — Rights & Obligations
-                            </div>
-                            <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-on-surface-muted/60 text-xs">
-                                <div class="w-1.5 h-1.5 rounded-full bg-border-subtle"></div>
-                                4.1.b — Academic Integrity
-                            </div>
-                            <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-on-surface-muted/60 text-xs">
-                                <div class="w-1.5 h-1.5 rounded-full bg-border-subtle"></div>
-                                4.2 — Conduct Standards
-                            </div>
-                            <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-on-surface-muted/60 text-xs">
-                                <div class="w-1.5 h-1.5 rounded-full bg-border-subtle"></div>
-                                4.3 — Sanctions Framework
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div><!-- /grid -->
         </main>
     </div>
 
-    <!-- ═══════════════════════════════════════════════
-         AGENTIC MODE LOGIC (Vanilla JS)
-    ═══════════════════════════════════════════════ -->
+    <!-- Agentic simulation mock script -->
     <script>
-        let isAgenticMode = false;
-
-        function toggleAgenticMode() {
+        // Stub to avoid errors if button is clicked manually
+        document.getElementById('btn-stress').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
             const container = document.getElementById('reading-container');
-            const btn = document.getElementById('btn-stress');
-            const neuroStatus = document.getElementById('neuro-status');
-            const neuroDot = document.getElementById('neuro-dot');
-            const neuroLabel = document.getElementById('neuro-label');
-
-            // Metric elements
-            const loadLabel = document.getElementById('metric-load-label');
-            const loadBar = document.getElementById('metric-load-bar');
-            const stressLabel = document.getElementById('metric-stress-label');
-            const stressBar = document.getElementById('metric-stress-bar');
-
-            isAgenticMode = !isAgenticMode;
-
-            if (isAgenticMode) {
-                // ── Enter Agentic Mode ──
-                container.classList.add('agentic-mode');
-
-                // Update button
-                btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Restaurar Normal';
-                btn.classList.remove('from-danger', 'to-accent', 'shadow-danger/20', 'hover:shadow-danger/30');
-                btn.classList.add('from-success', 'to-secondary', 'shadow-success/20', 'hover:shadow-success/30');
-
-                // Update neuro indicator
-                neuroStatus.classList.remove('bg-success/10', 'border-success/20');
-                neuroStatus.classList.add('bg-danger/10', 'border-danger/20');
-                neuroDot.classList.remove('bg-success');
-                neuroDot.classList.add('bg-danger');
-                neuroLabel.classList.remove('text-success');
-                neuroLabel.classList.add('text-danger');
-                neuroLabel.textContent = 'Stress Detected';
-
-                // Update metrics
-                loadLabel.textContent = 'High';
-                loadLabel.classList.add('text-danger');
-                loadBar.style.width = '85%';
-                loadBar.style.background = 'linear-gradient(to right, #E17055, #FD79A8)';
-
-                stressLabel.textContent = '0.87';
-                stressLabel.classList.add('text-danger');
-                stressBar.style.width = '87%';
-                stressBar.style.background = 'linear-gradient(to right, #E17055, #FD79A8)';
-
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // Restore
+                sidebar.classList.remove('-translate-x-full');
+                container.classList.remove('ml-0');
+                container.classList.add('ml-64');
             } else {
-                // ── Exit Agentic Mode ──
-                container.classList.remove('agentic-mode');
-
-                // Restore button
-                btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg> Simular Estrés';
-                btn.classList.add('from-danger', 'to-accent', 'shadow-danger/20', 'hover:shadow-danger/30');
-                btn.classList.remove('from-success', 'to-secondary', 'shadow-success/20', 'hover:shadow-success/30');
-
-                // Restore neuro indicator
-                neuroStatus.classList.add('bg-success/10', 'border-success/20');
-                neuroStatus.classList.remove('bg-danger/10', 'border-danger/20');
-                neuroDot.classList.add('bg-success');
-                neuroDot.classList.remove('bg-danger');
-                neuroLabel.classList.add('text-success');
-                neuroLabel.classList.remove('text-danger');
-                neuroLabel.textContent = 'Normal';
-
-                // Restore metrics
-                loadLabel.textContent = 'Low';
-                loadLabel.classList.remove('text-danger');
-                loadBar.style.width = '25%';
-                loadBar.style.background = '';
-
-                stressLabel.textContent = '0.12';
-                stressLabel.classList.remove('text-danger');
-                stressBar.style.width = '12%';
-                stressBar.style.background = 'linear-gradient(to right, #00B894, #81ECEC)';
+                // Hide sidebar (Agentic mode)
+                sidebar.classList.add('-translate-x-full');
+                container.classList.remove('ml-64');
+                container.classList.add('ml-0');
             }
-        }
+        });
     </script>
 
+    <!-- Real telemetry connection -->
     <script src="js/telemetry.js"></script>
 </body>
 </html>
