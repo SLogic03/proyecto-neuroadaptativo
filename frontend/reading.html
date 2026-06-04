@@ -157,10 +157,6 @@
                         <div class="w-2 h-2 rounded-full bg-slate-400" id="neuro-dot"></div>
                         <span class="text-xs font-semibold text-slate-600" id="neuro-label">NeuroAdapt Pending</span>
                     </div>
-                    <button id="btn-stress" onclick="document.body.classList.toggle('agentic-mode')"
-                            class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-lg shadow-sm transition-all">
-                        Simular Estrés
-                    </button>
                 </div>
             </header>
 
@@ -192,26 +188,6 @@
         </main>
     </div>
 
-    <!-- Agentic simulation mock script -->
-    <script>
-        // Stub to avoid errors if button is clicked manually
-        document.getElementById('btn-stress').addEventListener('click', () => {
-            const sidebar = document.getElementById('sidebar');
-            const container = document.getElementById('reading-container');
-            
-            if (sidebar.classList.contains('-translate-x-full')) {
-                // Restore
-                sidebar.classList.remove('-translate-x-full');
-                container.classList.remove('ml-0');
-                container.classList.add('ml-64');
-            } else {
-                // Hide sidebar (Agentic mode)
-                sidebar.classList.add('-translate-x-full');
-                container.classList.remove('ml-64');
-                container.classList.add('ml-0');
-            }
-        });
-    </script>
 
     <!-- Real telemetry connection -->
     <script src="js/telemetry.js"></script>

@@ -146,72 +146,45 @@ ws.onmessage = (event) => {
 function applyNeuroAdaptation(directives) {
     console.log(`[NeuroAdapt] Aplicando adaptación: ${directives.action}`);
 
-    const body = document.body;
+    const root = document.documentElement;
+    const sidebar = document.getElementById('sidebar');
+    const container = document.getElementById('reading-container');
 
-    // ── Ajustar tamaño de fuente ──
-    if (directives.font_size) {
-        body.style.fontSize = directives.font_size;
-        console.log(`[NeuroAdapt] font-size -> ${directives.font_size}`);
-    }
+    if (directives.action === 'adapt' || directives.action === 'stress_detected') {
+        // Apply stress-relieving neuro-friendly styles
+        root.style.setProperty('--dyn-font-size', '1.2rem');
+        root.style.setProperty('--dyn-line-height', '1.8');
+        root.style.setProperty('--dyn-letter-spacing', '0.05em');
+        root.style.setProperty('--dyn-bg-color', '#f0f4f8'); // calming pale blue
 
-    // ── Ajustar interlineado ──
-    if (directives.line_height) {
-        body.style.lineHeight = directives.line_height;
-        console.log(`[NeuroAdapt] line-height -> ${directives.line_height}`);
-    }
-
-    // ── Tema visual calmante ──
-    if (directives.theme) {
-        // Removemos temas previos y aplicamos el nuevo
-        body.classList.remove('neuro-theme-calm', 'neuro-theme-warm', 'neuro-theme-minimal');
-        body.classList.add(`neuro-theme-${directives.theme}`);
-
-        // Inyectamos variables CSS de tema si es necesario
-        const themeStyles = {
-            calm:    { bg: '#0a0a14', accent: '#6C5CE7', text: '#d8d8e8' },
-            warm:    { bg: '#14100a', accent: '#FDCB6E', text: '#e8e0d0' },
-            minimal: { bg: '#0f0f12', accent: '#81ECEC', text: '#e0e0e0' },
-        };
-        const t = themeStyles[directives.theme];
-        if (t) {
-            body.style.setProperty('--neuro-bg', t.bg);
-            body.style.setProperty('--neuro-accent', t.accent);
-            body.style.setProperty('--neuro-text', t.text);
-        }
-        console.log(`[NeuroAdapt] theme -> ${directives.theme}`);
-    }
-
-    // ── Ocultar/mostrar sidebar ──
-    if (directives.hide_sidebar !== undefined) {
-        const sidebar = document.querySelector('aside');
-        const main = document.querySelector('main');
-        if (sidebar) {
-            if (directives.hide_sidebar) {
-                sidebar.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
-                sidebar.style.transform = 'translateX(-100%)';
-                sidebar.style.opacity = '0';
-                sidebar.style.pointerEvents = 'none';
-                if (main) main.style.marginLeft = '0';
-            } else {
-                sidebar.style.transform = 'translateX(0)';
-                sidebar.style.opacity = '1';
-                sidebar.style.pointerEvents = 'auto';
-                if (main) main.style.marginLeft = '';
+        // Hide sidebar if requested to reduce cognitive load
+        if (directives.hide_sidebar) {
+            if (sidebar) {
+                sidebar.classList.add('-translate-x-full');
+            }
+            if (container) {
+                container.classList.remove('ml-64');
+                container.classList.add('ml-0');
             }
         }
-        console.log(`[NeuroAdapt] hide_sidebar -> ${directives.hide_sidebar}`);
+    } else {
+        // Restore normal base styles
+        root.style.setProperty('--dyn-font-size', '1.125rem');
+        root.style.setProperty('--dyn-line-height', '1.75');
+        root.style.setProperty('--dyn-letter-spacing', 'normal');
+        root.style.setProperty('--dyn-bg-color', '#ffffff');
+
+        // Restore sidebar
+        if (sidebar) {
+            sidebar.classList.remove('-translate-x-full');
+        }
+        if (container) {
+            container.classList.remove('ml-0');
+            container.classList.add('ml-64');
+        }
     }
 
-    // ── Simplificar contenido ──
-    if (directives.simplify_content) {
-        document.querySelectorAll('.hide-in-agentic').forEach(el => {
-            el.style.opacity = '0.3';
-            el.style.filter = 'blur(1px)';
-        });
-        console.log("[NeuroAdapt] Contenido simplificado (baja opacidad)");
-    }
-
-    // ── Notificación visual efímera ──
+    // Ephemeral visual notification
     if (directives.message) {
         showNeuroNotification(directives.message, directives.action);
     }
