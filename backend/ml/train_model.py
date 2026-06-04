@@ -56,19 +56,14 @@ df["v_squared"] = df["v"] ** 2
 #     Indicador de cambio brusco de movimiento.
 df["a_over_v"] = np.where(df["v"] > 0, df["a"] / df["v"], 0.0)
 
-# --- 2d. Interaccion idle * click_rate ----------------------------
-#     Tiempo inactivo alto + clicks altos puede indicar frustracion.
-df["idle_x_click"] = df["idle_time"] * df["click_rate"]
-
 # Features finales
-FEATURE_COLS = ["v", "a", "idle_time", "click_rate",
-                "jerk", "v_squared", "a_over_v", "idle_x_click"]
+FEATURE_COLS = ["v", "a", "jerk", "v_squared", "a_over_v"]
 
 X = df[FEATURE_COLS]
 y = df["target"]
 
 print(f"   Features usadas ({len(FEATURE_COLS)}): {FEATURE_COLS}")
-print(f"   Features derivadas nuevas: jerk, v_squared, a_over_v, idle_x_click")
+print(f"   Features derivadas nuevas: jerk, v_squared, a_over_v")
 print(f"   Shape X: {X.shape}  |  Shape y: {y.shape}\n")
 
 

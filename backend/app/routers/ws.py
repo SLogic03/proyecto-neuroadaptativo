@@ -22,32 +22,25 @@ except Exception as e:
 
 # Columnas que espera el modelo (mismo orden que train_model.py)
 FEATURE_COLS = [
-    "v", "a", "idle_time", "click_rate",
-    "jerk", "v_squared", "a_over_v", "idle_x_click",
+    "v", "a", "jerk", "v_squared", "a_over_v"
 ]
 
 
 def compute_batch_features(events: list[TelemetryEvent]) -> dict | None:
     """Calcula las features promedio de un lote de eventos para el modelo ML.
 
-    Extrae v, a, idle_time y click_rate de los eventos que los contengan,
-    y deriva jerk, v_squared, a_over_v e idle_x_click a partir de ellos.
+    Extrae v y a de los eventos que los contengan,
+    y deriva jerk, v_squared, a_over_v a partir de ellos.
     Devuelve None si no hay datos suficientes.
     """
     velocities = []
     accelerations = []
-    idle_times = []
-    click_rates = []
 
     for ev in events:
         if ev.v is not None:
             velocities.append(ev.v)
         if ev.a is not None:
             accelerations.append(ev.a)
-        if ev.idle_time is not None:
-            idle_times.append(ev.idle_time)
-        if ev.click_rate is not None:
-            click_rates.append(ev.click_rate)
 
     # Necesitamos al menos velocidad y aceleracion para predecir
     if not velocities or not accelerations:
@@ -55,24 +48,18 @@ def compute_batch_features(events: list[TelemetryEvent]) -> dict | None:
 
     avg_v = float(np.mean(velocities))
     avg_a = float(np.mean(accelerations))
-    avg_idle = float(np.mean(idle_times)) if idle_times else 0.0
-    avg_click = float(np.mean(click_rates)) if click_rates else 0.0
 
     # Features derivadas (misma logica que train_model.py)
     jerk = float(np.std(accelerations))  # variabilidad de aceleracion como proxy de jerk
     v_squared = avg_v ** 2
     a_over_v = avg_a / avg_v if avg_v > 0 else 0.0
-    idle_x_click = avg_idle * avg_click
 
     return {
         "v": avg_v,
         "a": avg_a,
-        "idle_time": avg_idle,
-        "click_rate": avg_click,
         "jerk": jerk,
         "v_squared": v_squared,
         "a_over_v": a_over_v,
-        "idle_x_click": idle_x_click,
     }
 
 

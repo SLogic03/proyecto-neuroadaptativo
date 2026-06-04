@@ -32,10 +32,7 @@ def generar_datos_calibrados():
         v = max(0.01, v)
         a = max(0.001, a)
         
-        idle_time = np.random.uniform(0, 2)
-        click_rate = np.random.randint(0, 3)
-        
-        data.append([timestamp, x, y, v, a, idle_time, click_rate, 0])
+        data.append([timestamp, x, y, v, a, 0])
         
     # ── CLASE 1: ESTRES ──
     # Movimientos bruscos, rápidos e irregulares
@@ -45,21 +42,17 @@ def generar_datos_calibrados():
         y = np.random.uniform(0, 1080)
         
         # Escalas fisicas altas (sacudidas)
-        v = np.random.normal(15.0, 5.0)
-        a = np.random.normal(2.5, 1.0)
+        v = np.random.normal(15.0, 3.0)
+        a = np.random.normal(2.5, 0.5)
         
         # Evitar valores negativos
         v = max(0.01, v)
         a = max(0.001, a)
         
-        # Posible mayor inactividad y mas clicks impulsivos
-        idle_time = np.random.uniform(1, 6)
-        click_rate = np.random.randint(2, 10)
-        
-        data.append([timestamp, x, y, v, a, idle_time, click_rate, 1])
+        data.append([timestamp, x, y, v, a, 1])
         
     # Crear DataFrame y mezclar (shuffle)
-    df = pd.DataFrame(data, columns=['timestamp', 'x', 'y', 'v', 'a', 'idle_time', 'click_rate', 'target'])
+    df = pd.DataFrame(data, columns=['timestamp', 'x', 'y', 'v', 'a', 'target'])
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
     
     # Exportar
