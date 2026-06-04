@@ -82,60 +82,64 @@ async def websocket_telemetry(websocket: WebSocket):
     await websocket.accept()
     print("[WS] Cliente WebSocket conectado.")
 
-    try:
-        while True:
-            try:
-                # El front-end envia un Array JSON: [{...}, {...}, ...]
-                data = await websocket.receive_json()
+    while True:
+        try:
+            # El front-end envia un Array JSON: [{...}, {...}, ...]
+            data = await websocket.receive_json()
 
-                # Normalizamos: si llega un solo dict, lo envolvemos en lista
-                if isinstance(data, dict):
-                    data = [data]
+            # Normalizamos: si llega un solo dict, lo envolvemos en lista
+            if isinstance(data, dict):
+                data = [data]
 
-                if not isinstance(data, list):
-                    print(f"[WS][WARN] Payload inesperado (no es list ni dict): {type(data)}")
-                    continue
+            if not isinstance(data, list):
+                print(f"[WS][WARN] Payload inesperado (no es list ni dict): {type(data)}")
+                continue
 
-                # Validamos cada evento con Pydantic
-                events = []
-                for raw_event in data:
-                    try:
-                        event = TelemetryEvent(**raw_event)
-                        events.append(event)
-                    except Exception as ve:
-                        print(f"[WS][WARN] Error de validacion en evento: {ve}")
+            # Validamos cada evento con Pydantic
+            events = []
+            for raw_event in data:
+                try:
+                    event = TelemetryEvent(**raw_event)
+                    events.append(event)
+                except Exception as ve:
+                    print(f"[WS][WARN] Error de validacion en evento: {ve}")
 
-                print(f"[WS][OK] Telemetria recibida: {len(events)} eventos validos de {len(data)} totales")
+            print(f"[WS][OK] Telemetria recibida: {len(events)} eventos validos de {len(data)} totales")
 
-                # TODO: Aqui persistir los eventos en PostgreSQL
-                # for event in events:
-                #     await save_event(event)
+            # TODO: Aqui persistir los eventos en PostgreSQL
+            # for event in events:
+            #     await save_event(event)
 
-                # ── Inferencia ML + LLM (LS-19) ───────────────────
-                if ml_model is not None and events:
-                    features = compute_batch_features(events)
+            # ── Inferencia ML + LLM (LS-19) ───────────────────
+            if ml_model is not None and events:
+                features = compute_batch_features(events)
 
-                    if features is not None:
-                        # Estructurar input en el orden correcto
-                        X_input = np.array(
-                            [[features[col] for col in FEATURE_COLS]]
-                        )
-                        prediction = int(ml_model.predict(X_input)[0])
-                        cognitive_state = "Estres" if prediction == 1 else "Normal"
+                if features is not None:
+                    # Estructurar input en el orden correcto
+                    X_input = np.array(
+                        [[features[col] for col in FEATURE_COLS]]
+                    )
+                    prediction = int(ml_model.predict(X_input)[0])
+                    cognitive_state = "Estres" if prediction == 1 else "Normal"
 
-                        print(f"[WS][ML] Prediccion: {prediction} -> {cognitive_state}")
+                    print(f"[WS][ML] Prediccion: {prediction} -> {cognitive_state}")
 
-                        # Llamar a Gemini para directivas DOM
-                        directives = await get_dom_directives(
-                            cognitive_state=cognitive_state,
-                            features=features,
-                        )
+                    # Llamar a Gemini para directivas DOM
+                    directives = await get_dom_directives(
+                        cognitive_state=cognitive_state,
+                        features=features,
+                    )
 
-                        # Retransmitir directivas al navegador
-                        await websocket.send_json(directives)
+                    # Retransmitir directivas al navegador
+                    await websocket.send_json(directives)
 
-            except Exception as e:
-                print(f"[WS][ERR] Error procesando mensaje WebSocket: {type(e).__name__}: {e}")
-                # No hacemos break -> el loop sigue escuchando
-    except WebSocketDisconnect:
-        print("[WS] Cliente WebSocket desconectado.")
+        except WebSocketDisconnect:
+            print("[WS] Cliente WebSocket desconectado.")
+            break
+        except RuntimeError as e:
+            print(f"[WS] Conexion WebSocket cerrada: {e}")
+            break
+        except Exception as e:
+            print(f"[WS][ERR] Error procesando mensaje WebSocket: {type(e).__name__}: {e}")
+            # No hacemos break -> el loop sigue escuchando
+
