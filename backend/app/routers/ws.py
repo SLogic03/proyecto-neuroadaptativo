@@ -31,7 +31,7 @@ FEATURE_COLS = [
 # ── Parámetros de calibración ─────────────────────────────────────
 CALIBRATION_BATCHES = 10       # Lotes requeridos para calibrar (~10-15 s)
 MIN_STD = 0.01                 # Piso para desviación estándar (evita /0)
-Z_SCORE_THRESHOLD = 2.0        # Umbral de Z para considerar "atípico"
+Z_SCORE_THRESHOLD = 1.5        # Umbral de Z para considerar "atípico"
 
 
 # ── Estado de conexión por usuario ────────────────────────────────

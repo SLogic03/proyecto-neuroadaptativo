@@ -69,22 +69,46 @@ def seed() -> None:
         db.rollback()
         print(f"[SEED] ❌ Error al crear el usuario admin: {e}")
         raise
-    # 3. Insertar Curso por defecto
+    # 3. Insertar o actualizar Curso por defecto
     try:
+        course_data = [
+            {
+                "section": "1. Contexto y Autonomía Universitaria",
+                "text": "La Constitución y la Ley Orgánica de Educación Superior (LOES) reconocen a las universidades y escuelas politécnicas autonomía académica, administrativa, financiera y orgánica. Esto incluye la libertad para nombrar a sus autoridades, profesores e investigadores en consonancia con los principios de alternancia y equidad."
+            },
+            {
+                "section": "2. Vinculación del Personal Ocasional",
+                "text": "Para el personal académico ocasional tipo 1, normalmente se exige acreditar al menos una obra de relevancia o un artículo indexado en bases de datos mundiales. Sin embargo, mediante la Resolución ESPE-HCU-RES-2025-058, el Honorable Consejo Universitario ha establecido una excepción temporal para una rama específica."
+            },
+            {
+                "section": "3. Disposición Transitoria: Ciencias Médicas",
+                "text": "Para la vinculación del personal académico Ocasional 1 del Departamento de Ciencias Médicas, el requisito de publicación científica podrá ser sustituido por la participación como expositor en al menos 1 congreso médico en los últimos 5 años, o por la aprobación de 3 eventos científicos de mínimo 32 horas. Esta disposición estará vigente únicamente hasta la finalización del periodo académico SII-2025.",
+                "question": {
+                    "text": "PUNTO DE CONTROL: ¿Cuál es el requisito alternativo principal que permite esta resolución para los docentes de Ciencias Médicas?",
+                    "options": [
+                        "Acreditar 10 años de experiencia en hospitales públicos.",
+                        "Participar como expositor en al menos 1 congreso médico en los últimos 5 años.",
+                        "Publicar un libro sobre medicina interna."
+                    ],
+                    "correctIndex": 1
+                }
+            }
+        ]
+        course_json = json.dumps(course_data, ensure_ascii=False)
+
         existing_course = db.query(Course).filter(Course.title == "Inducción Estudiantil - Normas ESPE").first()
         if existing_course:
             course = existing_course
-            print(f"[SEED] ℹ️  El curso '{course.title}' ya existe (id={course.id}).")
+            # Siempre actualizar el content_data para reflejar cambios en la semilla
+            course.content_data = course_json
+            db.commit()
+            db.refresh(course)
+            print(f"[SEED] ✅ Curso '{course.title}' actualizado con nuevo content_data (id={course.id}).")
         else:
-            course_data = [
-                {"section": "1. Derechos Inalienables", "text": "Todo estudiante admitido adquiere los derechos establecidos en la Constitución y las leyes orgánicas de educación superior, incluyendo la gratuidad, equidad, y acceso a servicios de bienestar estudiantil."},
-                {"section": "2. Sanciones Disciplinarias", "text": "El incumplimiento reiterado de las normativas de la Universidad, así como cometer fraude académico, podrá resultar en faltas leves, graves o muy graves, derivando en suspensión o expulsión."},
-                {"section": "3. Procedimientos de Matrícula", "text": "La matrícula ordinaria, extraordinaria y especial debe realizarse mediante el sistema institucional en las fechas del calendario académico oficial. No se permiten matrículas extemporáneas sin la debida justificación de fuerza mayor."}
-            ]
             course = Course(
                 title="Inducción Estudiantil - Normas ESPE",
                 description="Curso fundamental sobre la normativa y estatutos de la universidad.",
-                content_data=json.dumps(course_data)
+                content_data=course_json
             )
             db.add(course)
             db.commit()
