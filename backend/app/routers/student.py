@@ -79,3 +79,27 @@ async def get_course_details(
         "content_data": course.content_data,
         "created_at": course.created_at.isoformat() if course.created_at else None
     }
+
+from pydantic import BaseModel
+from app.services.llm_service import simplify_text
+
+class SimplifyRequest(BaseModel):
+    text: str
+
+@router.post("/simplify")
+async def simplify_course_content(
+    request: SimplifyRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Toma un bloque de texto y utiliza el LLM (Gemini) para generar
+    un resumen simplificado en viñetas amigables.
+    """
+    if not request.text or len(request.text.strip()) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El texto a simplificar no puede estar vacío."
+        )
+    
+    summary_html = await simplify_text(request.text)
+    return {"summary": summary_html}

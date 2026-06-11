@@ -135,3 +135,34 @@ async def get_dom_directives(
     except Exception as e:
         print(f"[LLM][ERROR] Fallo en llamada a Gemini: {type(e).__name__}: {e}")
         return FALLBACK_RESPONSE
+
+
+async def simplify_text(text: str) -> str:
+    """Utiliza Gemini para generar un resumen simplificado del texto dado."""
+    try:
+        print(f"[LLM] Solicitando simplificación de texto ({len(text)} caracteres)...")
+        
+        prompt = (
+            "Actúa como un tutor experto en accesibilidad cognitiva. "
+            "Tu tarea es tomar el siguiente texto, que puede ser complejo o legal, "
+            "y resumirlo en unas pocas viñetas (bullet points) usando un lenguaje "
+            "extremadamente claro, sencillo y directo. "
+            "Usa emojis para hacerlo más amigable.\n\n"
+            f"Texto original:\n{text}\n\n"
+            "Resumen simplificado en formato HTML (usa <ul> y <li>):"
+        )
+        
+        model = genai.GenerativeModel(
+            model_name=MODEL_NAME,
+            generation_config=genai.GenerationConfig(
+                temperature=0.4,
+                max_output_tokens=512,
+            ),
+        )
+        
+        response = await model.generate_content_async(prompt)
+        return response.text.strip()
+        
+    except Exception as e:
+        print(f"[LLM][ERROR] Fallo en simplificación de texto: {type(e).__name__}: {e}")
+        return "<ul><li>No se pudo generar el resumen simplificado debido a un error de conexión con la IA.</li></ul>"

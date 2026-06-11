@@ -169,6 +169,11 @@ function applyNeuroAdaptation(directives) {
                 container.classList.add('ml-0');
             }
         }
+        // Si el LLM dictamina que se debe simplificar el contenido
+        if (directives.simplify_content) {
+            triggerLLMSummary();
+        }
+        
     } else {
         // Restore normal base styles
         root.style.setProperty('--dyn-font-size', '1.125rem');
@@ -185,11 +190,64 @@ function applyNeuroAdaptation(directives) {
             container.classList.remove('ml-0');
             container.classList.add('ml-64');
         }
+        
+        // Hide agent panel
+        const agentPanel = document.getElementById('agent-panel');
+        if (agentPanel) agentPanel.classList.add('hidden');
     }
 
     // Ephemeral visual notification
     if (directives.message) {
         showNeuroNotification(directives.message, directives.action);
+    }
+}
+
+let isSummarizing = false;
+
+async function triggerLLMSummary() {
+    const agentPanel = document.getElementById('agent-panel');
+    const summaryContainer = document.getElementById('agent-summary-content');
+    const readingContent = document.getElementById('reading-content');
+    
+    if (!agentPanel || !summaryContainer || !readingContent || isSummarizing) return;
+    
+    // Mostramos el panel en estado de carga
+    agentPanel.classList.remove('hidden');
+    summaryContainer.innerHTML = `
+        <div class="flex items-center gap-2 text-blue-600">
+            <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span>Generando resumen neuroadaptativo con Gemini...</span>
+        </div>
+    `;
+    
+    isSummarizing = true;
+    
+    try {
+        // Extraemos solo el texto de los párrafos actuales
+        const paragraphs = Array.from(readingContent.querySelectorAll('p')).map(p => p.textContent).join('\\n\\n');
+        
+        const token = localStorage.getItem('access_token');
+        const API_BASE = window.location.protocol === "https:" ? `https://${window.location.host}` : `http://${window.location.host}`;
+        
+        const response = await fetch(`${API_BASE}/student/simplify`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ text: paragraphs })
+        });
+        
+        if (!response.ok) throw new Error('Fallo al obtener resumen');
+        
+        const data = await response.json();
+        summaryContainer.innerHTML = data.summary;
+        
+    } catch (err) {
+        console.error("Error en resumen LLM:", err);
+        summaryContainer.innerHTML = '<p class="text-red-500">No se pudo cargar el resumen en este momento.</p>';
+    } finally {
+        isSummarizing = false;
     }
 }
 
