@@ -148,15 +148,22 @@
 
             <!-- User -->
             <div class="p-6 border-t border-slate-100 bg-slate-50/50">
-                <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700">
-                        SL</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-slate-900 truncate">S. Lojan</p>
-                        <p class="text-xs text-slate-500">Student</p>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700" id="user-avatar">
+                            --</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-slate-900 truncate" id="user-name">Loading...</p>
+                            <p class="text-xs text-slate-500" id="user-role">Student</p>
+                        </div>
                     </div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-dot" title="Online"></div>
+                    <button id="btn-logout" title="Cerrar sesión" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </aside>
@@ -270,68 +277,15 @@
                     </div>
                 </div>
 
-                <!-- Pending Tasks -->
+                <!-- My Courses (Dynamic) -->
                 <div
                     class="col-span-12 lg:col-span-6 bg-white rounded-2xl p-8 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
                     <div class="flex items-center justify-between mb-6">
-                        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">Pending Tasks</p>
-                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">3 remaining</span>
+                        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">My Courses</p>
+                        <span id="courses-count" class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">Loading...</span>
                     </div>
-                    <div class="space-y-4">
-                        <div
-                            class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer">
-                            <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                </svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p
-                                    class="text-sm font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                                    Read Section 4.1</p>
-                                <p class="text-xs text-slate-500 mt-1">Due today · Est. 15 min</p>
-                            </div>
-                            <span
-                                class="px-3 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700 uppercase tracking-wide">Urgent</span>
-                        </div>
-                        <div
-                            class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer">
-                            <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                                </svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p
-                                    class="text-sm font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                                    Ethics Quiz</p>
-                                <p class="text-xs text-slate-500 mt-1">Due in 2 days · Est. 10 min</p>
-                            </div>
-                            <span
-                                class="px-3 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-700 uppercase tracking-wide">Medium</span>
-                        </div>
-                        <div
-                            class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer">
-                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342" />
-                                </svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p
-                                    class="text-sm font-semibold text-slate-900 group-hover:text-blue-700 transition-colors">
-                                    Review Policy</p>
-                                <p class="text-xs text-slate-500 mt-1">Due in 5 days · Est. 20 min</p>
-                            </div>
-                            <span
-                                class="px-3 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-700 uppercase tracking-wide">Normal</span>
-                        </div>
+                    <div id="courses-container" class="space-y-4">
+                        <p class="text-sm text-slate-400 py-4 text-center">Loading courses...</p>
                     </div>
                 </div>
 
@@ -405,6 +359,7 @@
             })();
     </script>
 
+    <script src="js/dashboard.js"></script>
     <script src="js/telemetry.js"></script>
 </body>
 
