@@ -92,7 +92,7 @@ async function loadMyCourses() {
 
         // Renderizar tarjetas
         $container.innerHTML = courses.map(c => `
-            <div class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer">
+            <div onclick="window.location.href='reading.html?courseId=${c.id}'" class="group flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer">
                 <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"

@@ -4,7 +4,7 @@ Endpoints:
 - ``GET /student/my-courses`` — Obtener cursos a los que el usuario está matriculado.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.models import Course, Enrollment, User
@@ -40,3 +40,42 @@ async def get_my_courses(
         })
         
     return courses_data
+
+@router.get("/courses/{course_id}")
+async def get_course_details(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Obtiene los detalles de un curso específico, incluyendo el contenido (content_data).
+    Verifica que el usuario esté matriculado.
+    """
+    # Verificar matrícula
+    enrollment = db.query(Enrollment).filter(
+        Enrollment.user_id == current_user.id,
+        Enrollment.course_id == course_id
+    ).first()
+
+    if not enrollment:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No estás matriculado en este curso o el curso no existe."
+        )
+
+    # Obtener el curso
+    course = db.query(Course).filter(Course.id == course_id).first()
+    
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Curso no encontrado."
+        )
+
+    return {
+        "id": course.id,
+        "title": course.title,
+        "description": course.description,
+        "content_data": course.content_data,
+        "created_at": course.created_at.isoformat() if course.created_at else None
+    }
