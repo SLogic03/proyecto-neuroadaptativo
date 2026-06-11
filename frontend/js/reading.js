@@ -6,10 +6,38 @@ const API_BASE = "http://localhost:8080";
 
 // ── 1. Verificación de Autenticación ─────────────────────────────
 const accessToken = localStorage.getItem("neuroadapt_token");
+const userRaw = localStorage.getItem("neuroadapt_user");
 
-if (!accessToken) {
+if (!accessToken || !userRaw) {
     window.location.href = "login.html";
 }
+
+const currentUser = JSON.parse(userRaw);
+
+// ── 1b. Rellenar datos de usuario en sidebar y bind logout ───────
+document.addEventListener("DOMContentLoaded", () => {
+    const $userName   = document.getElementById("user-name");
+    const $userRole   = document.getElementById("user-role");
+    const $userAvatar = document.getElementById("user-avatar");
+    const $btnLogout  = document.getElementById("btn-logout");
+
+    if ($userName && $userRole && $userAvatar && currentUser) {
+        $userName.textContent = currentUser.full_name;
+        $userRole.textContent = currentUser.role === "admin" ? "Administrador" : "Estudiante";
+        const initials = currentUser.full_name
+            .split(" ").filter(Boolean).slice(0, 2)
+            .map(n => n[0].toUpperCase()).join("");
+        $userAvatar.textContent = initials;
+    }
+
+    if ($btnLogout) {
+        $btnLogout.addEventListener("click", () => {
+            localStorage.removeItem("neuroadapt_token");
+            localStorage.removeItem("neuroadapt_user");
+            window.location.href = "login.html";
+        });
+    }
+});
 
 // ── 2. Inicialización ────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
@@ -36,6 +64,7 @@ async function loadCourseData(courseId) {
 
         if (response.status === 401) {
             localStorage.removeItem("neuroadapt_token");
+            localStorage.removeItem("neuroadapt_user");
             window.location.href = "login.html";
             return;
         }

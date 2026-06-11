@@ -8,9 +8,17 @@
 // ── Configuración ────────────────────────────────────────────────
 const API_BASE = "http://localhost:8080";
 
-// ── Estado global ────────────────────────────────────────────────
+// ── RBAC: Barrera de seguridad (solo admins) ─────────────────────
 let accessToken = localStorage.getItem("neuroadapt_token") || null;
 let currentUser = JSON.parse(localStorage.getItem("neuroadapt_user") || "null");
+
+if (!accessToken || !currentUser || currentUser.role !== "admin") {
+    // No es admin → expulsar al login
+    localStorage.removeItem("neuroadapt_token");
+    localStorage.removeItem("neuroadapt_user");
+    window.location.href = "login.html";
+}
+
 let usersCache = [];
 let coursesCache = [];
 let enrollmentLog = [];
@@ -175,10 +183,7 @@ function logout() {
     currentUser = null;
     localStorage.removeItem("neuroadapt_token");
     localStorage.removeItem("neuroadapt_user");
-
-    $dashboard.classList.add("hidden");
-    $loginScreen.classList.remove("hidden");
-    $loginError.classList.add("hidden");
+    window.location.href = "login.html";
 }
 
 $btnLogout.addEventListener("click", () => {
@@ -433,7 +438,7 @@ function renderEnrollmentLog() {
 // ── Init ─────────────────────────────────────────────────────────
 
 (function init() {
-    // Si ya hay un token guardado, intentar entrar directo
+    // RBAC ya validó que es admin — entrar directo al dashboard
     if (accessToken && currentUser) {
         enterDashboard();
     }

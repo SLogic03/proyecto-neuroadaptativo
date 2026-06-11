@@ -127,12 +127,20 @@
             </nav>
 
             <div class="p-6 border-t border-slate-100 bg-slate-50/50">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700">SL</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-slate-900 truncate">S. Lojan</p>
-                        <p class="text-xs text-slate-500">Student</p>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700" id="user-avatar">--</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-slate-900 truncate" id="user-name">Loading...</p>
+                            <p class="text-xs text-slate-500" id="user-role">Student</p>
+                        </div>
                     </div>
+                    <button id="btn-logout" title="Cerrar sesión" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </aside>
