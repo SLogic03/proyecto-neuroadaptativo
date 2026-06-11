@@ -2,7 +2,7 @@
  * dashboard.js — Lógica del panel de estudiante
  */
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "";
 
 // ── 1. Verificación de Autenticación ─────────────────────────────
 const accessToken = localStorage.getItem("neuroadapt_token");

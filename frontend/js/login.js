@@ -6,7 +6,7 @@
  *   - student → dashboard.html
  */
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "";
 const $loginForm = document.getElementById("student-login-form");
 const $loginError = document.getElementById("login-error");
 

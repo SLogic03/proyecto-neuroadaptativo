@@ -6,7 +6,7 @@
  */
 
 // ── Configuración ────────────────────────────────────────────────
-const API_BASE = "http://localhost:8080";
+const API_BASE = "";
 
 // ── RBAC: Barrera de seguridad (solo admins) ─────────────────────
 let accessToken = localStorage.getItem("neuroadapt_token") || null;
