@@ -32,13 +32,14 @@
             --dyn-font-size: 1.125rem;
             --dyn-line-height: 1.75;
             --dyn-letter-spacing: normal;
-            --dyn-bg-color: #ffffff;
+            --dyn-bg-color: #f8fafc;
             --dyn-text-color: #1e293b;
         }
 
         body { 
-            background-color: #f8fafc; /* slate-50 */ 
+            background-color: var(--dyn-bg-color);
             overflow-x: hidden;
+            transition: background-color 0.7s ease-in-out;
         }
         
         /* Minimalist Scrollbar */
@@ -115,14 +116,14 @@
                     Dashboard
                 </a>
 
-                <a href="courses.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
+                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
-                    My Courses
+                    Mis Cursos
                 </a>
 
-                <a href="reading.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-900 font-medium text-sm transition-all">
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-900 font-medium text-sm transition-all">
                     <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a3.375 3.375 0 01-4.06.52L12 17.25l-.47.24a3.375 3.375 0 01-4.06-.52L5 14.5m14 0V19a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 19v-4.5"/></svg>
-                    Neuro Module
+                    Módulo de Lectura
                 </a>
             </nav>
 

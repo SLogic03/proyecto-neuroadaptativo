@@ -4,8 +4,9 @@
 
 console.log("Módulo de telemetría conductual (con matemáticas) inicializado.");
 
-// Conexión WebSocket al backend (a través de Nginx en puerto 80)
-const ws = new WebSocket('ws://localhost/ws');
+// Conexión WebSocket al backend (dinámica basada en el host actual)
+const wsUrl = window.location.protocol === "https:" ? `wss://${window.location.host}/ws` : `ws://${window.location.host}/ws`;
+const ws = new WebSocket(wsUrl);
 ws.onopen = () => console.log("WebSocket conectado al backend.");
 ws.onerror = (err) => console.error("WebSocket error:", err);
 ws.onclose = (e) => console.error(`WebSocket cerrado: code=${e.code} reason=${e.reason} wasClean=${e.wasClean}`);
@@ -151,11 +152,12 @@ function applyNeuroAdaptation(directives) {
     const container = document.getElementById('reading-container');
 
     if (directives.action === 'adapt' || directives.action === 'stress_detected') {
-        // Apply stress-relieving neuro-friendly styles
-        root.style.setProperty('--dyn-font-size', '1.2rem');
-        root.style.setProperty('--dyn-line-height', '1.8');
-        root.style.setProperty('--dyn-letter-spacing', '0.05em');
-        root.style.setProperty('--dyn-bg-color', '#f0f4f8'); // calming pale blue
+        // Apply stress-relieving neuro-friendly styles (MORE PROMINENT)
+        root.style.setProperty('--dyn-font-size', '1.4rem');
+        root.style.setProperty('--dyn-line-height', '2.0');
+        root.style.setProperty('--dyn-letter-spacing', '0.06em');
+        root.style.setProperty('--dyn-bg-color', '#FEF3C7'); // Warm amber background
+        root.style.setProperty('--dyn-text-color', '#334155'); // Softer text color
 
         // Hide sidebar if requested to reduce cognitive load
         if (directives.hide_sidebar) {
@@ -172,7 +174,8 @@ function applyNeuroAdaptation(directives) {
         root.style.setProperty('--dyn-font-size', '1.125rem');
         root.style.setProperty('--dyn-line-height', '1.75');
         root.style.setProperty('--dyn-letter-spacing', 'normal');
-        root.style.setProperty('--dyn-bg-color', '#ffffff');
+        root.style.setProperty('--dyn-bg-color', '#f8fafc');
+        root.style.setProperty('--dyn-text-color', '#1e293b');
 
         // Restore sidebar
         if (sidebar) {
