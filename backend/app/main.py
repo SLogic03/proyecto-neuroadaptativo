@@ -8,7 +8,11 @@ app = FastAPI(title="API Neuroadaptativa")
 # ── CORS (permite que el frontend se comunique con el backend) ────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # En producción, restringir a los dominios reales
+    allow_origins=[
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "*",                       # Fallback desarrollo — restringir en producción
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
