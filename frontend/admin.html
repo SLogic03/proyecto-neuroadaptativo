@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin — NeuroAdapt</title>
+    <meta name="description"
+        content="Panel de administración de la plataforma neuroadaptativa. Gestión de usuarios, cursos y matrículas.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        body { background-color: #f8fafc; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+        /* Pulse dot */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.5; transform: scale(1.4); }
+        }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+        /* Toast */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+        .toast-in { animation: slideInRight 0.3s ease-out forwards; }
+    </style>
+</head>
+
+<body class="font-sans text-slate-800 antialiased min-h-screen">
+
+    <!-- ============================================================ -->
+    <!-- LOGIN SCREEN                                                  -->
+    <!-- ============================================================ -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+        <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg border border-slate-200 p-10 fade-in">
+            <!-- Brand -->
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-lg">N</div>
+                <div>
+                    <h1 class="text-lg font-semibold tracking-tight text-slate-900">NeuroAdapt</h1>
+                    <p class="text-xs text-slate-500 tracking-wider uppercase">Admin Panel</p>
+                </div>
+            </div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label for="login-email" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Email</label>
+                    <input id="login-email" type="email" required autocomplete="username"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition placeholder:text-slate-400"
+                        placeholder="admin@espe.edu.ec" value="admin@espe.edu.ec">
+                </div>
+                <div>
+                    <label for="login-password" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Password</label>
+                    <input id="login-password" type="password" required autocomplete="current-password"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition placeholder:text-slate-400"
+                        placeholder="••••••••" value="admin">
+                </div>
+
+                <div id="login-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-3"></div>
+
+                <button id="login-btn" type="submit"
+                    class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm py-3 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ADMIN DASHBOARD (hidden until login)                          -->
+    <!-- ============================================================ -->
+    <div id="admin-dashboard" class="hidden">
+        <div class="flex min-h-screen">
+
+            <!-- SIDEBAR -->
+            <aside class="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-30">
+                <!-- Brand -->
+                <div class="px-8 py-8 border-b border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-lg">N</div>
+                        <div>
+                            <h1 class="text-base font-semibold tracking-tight text-slate-900">NeuroAdapt</h1>
+                            <p class="text-xs text-slate-500 tracking-wider uppercase">Admin</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
+                    <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-slate-400">Management</p>
+
+                    <button id="nav-users"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-900 font-medium text-sm transition-all text-left">
+                        <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                        Estudiantes
+                    </button>
+
+                    <button id="nav-courses"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        Cursos
+                    </button>
+
+                    <button id="nav-enroll"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all text-left">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.193-9.193a4.5 4.5 0 016.364 6.364l-4.5 4.5a4.5 4.5 0 01-7.244-1.242" />
+                        </svg>
+                        Matrículas
+                    </button>
+
+                    <div class="my-6 border-t border-slate-100"></div>
+                    <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-slate-400">Platform</p>
+
+                    <a href="dashboard.html"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z" />
+                        </svg>
+                        Student Dashboard
+                    </a>
+                </nav>
+
+                <!-- User Info -->
+                <div class="p-6 border-t border-slate-100 bg-slate-50/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700" id="user-avatar">AD</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-slate-900 truncate" id="user-name">Admin</p>
+                            <p class="text-xs text-slate-500" id="user-role">admin</p>
+                        </div>
+                        <button id="btn-logout" title="Cerrar sesión"
+                            class="text-slate-400 hover:text-red-500 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <main class="flex-1 ml-64 p-10 lg:p-12 max-w-7xl mx-auto w-full">
+
+                <!-- Header -->
+                <header class="mb-10 flex items-end justify-between">
+                    <div>
+                        <p class="text-base text-slate-500 mb-2">Panel de Administración</p>
+                        <h2 id="page-title" class="text-4xl font-bold text-slate-900 tracking-tight">Estudiantes</h2>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-dot"></div>
+                        <span class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Conectado</span>
+                    </div>
+                </header>
+
+                <!-- ============================================= -->
+                <!-- SECTION: Users                                 -->
+                <!-- ============================================= -->
+                <section id="section-users" class="space-y-8 fade-in">
+                    <!-- Create Student Form -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-6">Registrar Nuevo Estudiante</p>
+                        <form id="form-create-user" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div>
+                                <label for="new-user-name" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Nombre Completo</label>
+                                <input id="new-user-name" type="text" required
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition placeholder:text-slate-400"
+                                    placeholder="María García López">
+                            </div>
+                            <div>
+                                <label for="new-user-email" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Email</label>
+                                <input id="new-user-email" type="email" required
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition placeholder:text-slate-400"
+                                    placeholder="estudiante@espe.edu.ec">
+                            </div>
+                            <div>
+                                <label for="new-user-pass" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Password Temporal</label>
+                                <div class="flex gap-3">
+                                    <input id="new-user-pass" type="text" required
+                                        class="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition placeholder:text-slate-400"
+                                        placeholder="temp1234">
+                                    <button type="submit"
+                                        class="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] whitespace-nowrap">
+                                        + Crear
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                            <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">Usuarios Registrados</p>
+                            <span id="users-count" class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">0 registros</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-slate-50 text-left">
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">ID</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Nombre</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Email</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Rol</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body" class="divide-y divide-slate-100">
+                                    <!-- JS fills this -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================= -->
+                <!-- SECTION: Courses                               -->
+                <!-- ============================================= -->
+                <section id="section-courses" class="space-y-8 fade-in hidden">
+                    <!-- Create Course Form -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-6">Crear Nuevo Curso</p>
+                        <form id="form-create-course" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label for="new-course-title" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Título del Curso</label>
+                                <input id="new-course-title" type="text" required
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition placeholder:text-slate-400"
+                                    placeholder="Inducción Institucional ESPE">
+                            </div>
+                            <div>
+                                <label for="new-course-desc" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Descripción</label>
+                                <div class="flex gap-3">
+                                    <input id="new-course-desc" type="text"
+                                        class="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition placeholder:text-slate-400"
+                                        placeholder="Curso de inducción para nuevos estudiantes">
+                                    <button type="submit"
+                                        class="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] whitespace-nowrap">
+                                        + Crear
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Courses Table -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                            <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">Cursos Disponibles</p>
+                            <span id="courses-count" class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">0 cursos</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-slate-50 text-left">
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">ID</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Título</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Descripción</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Creado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="courses-table-body" class="divide-y divide-slate-100">
+                                    <!-- JS fills this -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================= -->
+                <!-- SECTION: Enrollment                            -->
+                <!-- ============================================= -->
+                <section id="section-enroll" class="space-y-8 fade-in hidden">
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                        <p class="text-xs font-semibold tracking-widest uppercase text-slate-400 mb-6">Matricular Estudiante en Curso</p>
+                        <form id="form-enroll" class="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
+                            <div>
+                                <label for="enroll-user" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Estudiante</label>
+                                <select id="enroll-user" required
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition">
+                                    <option value="">Seleccionar estudiante…</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="enroll-course" class="block text-xs font-semibold tracking-wider uppercase text-slate-500 mb-2">Curso</label>
+                                <select id="enroll-course" required
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition">
+                                    <option value="">Seleccionar curso…</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button type="submit"
+                                    class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98]">
+                                    Matricular
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Recent Enrollments -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-8 py-6 border-b border-slate-100">
+                            <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">Matrículas Recientes</p>
+                        </div>
+                        <div id="enrollments-list" class="p-8 space-y-3">
+                            <p class="text-sm text-slate-400 text-center py-4">Las matrículas realizadas aparecerán aquí</p>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-6 right-6 z-50 space-y-3"></div>
+
+    <script src="js/admin.js"></script>
+</body>
+
+</html>
