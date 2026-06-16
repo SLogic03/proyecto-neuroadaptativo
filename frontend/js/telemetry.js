@@ -280,6 +280,28 @@ async function applyNeuroAdaptation(directives) {
     }
 }
 
+window.resetNeuroAdaptation = function() {
+    if (typeof currentAdaptationLevel !== 'undefined') {
+        currentAdaptationLevel = 0;
+    }
+    const content = document.getElementById('reading-content');
+    if (content) {
+        content.style.backgroundColor = '';
+        content.style.fontSize = '';
+        content.classList.remove('bg-yellow-50', 'text-lg', 'p-4'); 
+    }
+    
+    // Also reset root vars to default
+    const root = document.documentElement;
+    root.style.setProperty('--dyn-font-size', '1.125rem');
+    root.style.setProperty('--dyn-line-height', '1.75');
+    root.style.setProperty('--dyn-letter-spacing', 'normal');
+    root.style.setProperty('--dyn-bg-color', '#f8fafc');
+    root.style.setProperty('--dyn-text-color', '#1e293b');
+
+    console.log("[UX] Estado de Neuroadaptación reiniciado para la nueva página.");
+};
+
 let isSummarizing = false;
 
 async function triggerLLMSummary() {

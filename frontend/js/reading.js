@@ -4,6 +4,9 @@
 
 const API_BASE = "";
 
+let courseChapters = [];
+let currentChapterIndex = 0;
+
 // ── 1. Verificación de Autenticación ─────────────────────────────
 const accessToken = localStorage.getItem("neuroadapt_token");
 const userRaw = localStorage.getItem("neuroadapt_user");
@@ -50,7 +53,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    loadSidebarCourses(courseId);
     loadCourseData(courseId);
+
+    const $btnPrev = document.getElementById("btn-prev");
+    const $btnNext = document.getElementById("btn-next");
+    
+    if ($btnPrev) {
+        $btnPrev.addEventListener("click", () => {
+            if (currentChapterIndex > 0) {
+                currentChapterIndex--;
+                if (window.resetNeuroAdaptation) window.resetNeuroAdaptation();
+                renderChapter(currentChapterIndex);
+                window.scrollTo(0,0);
+            }
+        });
+    }
+    
+    if ($btnNext) {
+        $btnNext.addEventListener("click", () => {
+            if (currentChapterIndex < courseChapters.length - 1) {
+                currentChapterIndex++;
+                if (window.resetNeuroAdaptation) window.resetNeuroAdaptation();
+                renderChapter(currentChapterIndex);
+                window.scrollTo(0,0);
+            }
+        });
+    }
 });
 
 // ── 3. Cargar datos del curso ────────────────────────────────────
@@ -87,26 +116,47 @@ async function loadCourseData(courseId) {
     }
 }
 
+async function loadSidebarCourses(currentCourseId) {
+    try {
+        const response = await fetch(`${API_BASE}/student/my-courses`, {
+            headers: {
+                "Authorization": `Bearer ${accessToken}`
+            }
+        });
+        if (response.ok) {
+            const courses = await response.json();
+            const sidebar = document.getElementById("sidebar-courses");
+            if (sidebar) {
+                courses.forEach(c => {
+                    const isActive = c.id.toString() === currentCourseId;
+                    const cssClasses = isActive 
+                        ? "flex items-center gap-3 px-4 py-3 rounded-md border-l-4 border-blue-600 bg-slate-100 font-bold text-slate-900 text-sm transition-all"
+                        : "flex items-center gap-3 px-4 py-3 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 font-medium text-sm transition-all";
+                    
+                    const html = `
+                        <a href="reading.html?courseId=${c.id}" class="${cssClasses}">
+                            <svg class="w-5 h-5 text-current" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a3.375 3.375 0 01-4.06.52L12 17.25l-.47.24a3.375 3.375 0 01-4.06-.52L5 14.5m14 0V19a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 19v-4.5"/></svg>
+                            ${c.title}
+                        </a>
+                    `;
+                    sidebar.insertAdjacentHTML('beforeend', html);
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Error loading sidebar courses", e);
+    }
+}
+
 // ── 4. Renderizar contenido ──────────────────────────────────────
 function renderCourse(course) {
     const $title = document.getElementById("course-title");
-    const $content = document.getElementById("reading-content");
-    const $sidebar = document.getElementById("sidebar");
 
-    // 4.1 Actualizar el título
     if ($title) {
         $title.textContent = course.title;
     }
 
-    // 4.2 Renderizar el contenido JSON en HTML
-    if ($content && course.content_data) {
-        // Preservar el focus guide
-        let htmlContent = `
-            <!-- Focus Guide (Hidden by default, can be toggled by LLM via telemetry.js) -->
-            <div id="reading-focus-guide" class="hidden"></div>
-        `;
-        
-        // Parsear content_data
+    if (course.content_data) {
         let data = course.content_data;
         if (typeof data === "string") {
             try {
@@ -116,80 +166,95 @@ function renderCourse(course) {
                 data = [];
             }
         }
-
+        
         if (Array.isArray(data)) {
-            data.forEach((item, index) => {
-                // Sección + texto
-                htmlContent += `
-                    <h3 id="section-${index}" class="text-xl font-bold mt-8 mb-4">${item.section || ''}</h3>
-                    <p class="mb-4 text-justify">${item.text || ''}</p>
-                `;
-
-                // Si la sección tiene una pregunta, renderizar un Punto de Control
-                if (item.question) {
-                    const q = item.question;
-                    const quizId = `quiz-${index}`;
-                    htmlContent += `
-                        <div id="${quizId}" class="my-8 bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
-                            <div class="flex items-center gap-2 mb-4">
-                                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-                                    </svg>
-                                </div>
-                                <p class="text-sm font-bold text-slate-700 uppercase tracking-wide">Punto de Control</p>
-                            </div>
-                            <p class="text-sm font-semibold text-slate-800 mb-4">${q.text}</p>
-                            <div class="space-y-2" id="${quizId}-options">
-                                ${q.options.map((opt, optIdx) => `
-                                    <button
-                                        class="quiz-option w-full text-left px-4 py-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:border-blue-400 hover:bg-blue-50 transition-all active:scale-[0.99]"
-                                        data-quiz-id="${quizId}"
-                                        data-option-index="${optIdx}"
-                                        data-correct-index="${q.correctIndex}"
-                                    >
-                                        <span class="inline-flex items-center gap-3">
-                                            <span class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">${String.fromCharCode(65 + optIdx)}</span>
-                                            ${opt}
-                                        </span>
-                                    </button>
-                                `).join('')}
-                            </div>
-                            <div id="${quizId}-feedback" class="mt-4 hidden"></div>
-                        </div>
-                    `;
-                }
-            });
+            courseChapters = data;
+            currentChapterIndex = 0;
+            renderChapter(0);
         } else {
-            htmlContent += `<p>${String(data)}</p>`;
+            const $content = document.getElementById("reading-content");
+            if ($content) $content.innerHTML = `<p>${String(data)}</p>`;
         }
+    }
+}
 
-        $content.innerHTML = htmlContent;
+function renderChapter(index) {
+    const chapter = courseChapters[index];
+    if (!chapter) return;
 
-        // 4.3 Vincular Event Listeners a los botones de quiz
-        $content.querySelectorAll('.quiz-option').forEach(btn => {
+    const $content = document.getElementById("reading-content");
+    const $quizContainer = document.getElementById("quiz-container");
+    const $btnPrev = document.getElementById("btn-prev");
+    const $btnNext = document.getElementById("btn-next");
+
+    if (!$content || !$quizContainer) return;
+
+    // Render content
+    let htmlContent = `
+        <div id="reading-focus-guide" class="hidden"></div>
+        <h2 class="text-3xl font-bold mb-6">${chapter.chapter_title || 'Capítulo'}</h2>
+    `;
+
+    if (chapter.sections) {
+        chapter.sections.forEach(sec => {
+            htmlContent += `<p class="mb-4 text-justify">${sec.text}</p>`;
+        });
+    }
+
+    $content.innerHTML = htmlContent;
+
+    // Render quiz
+    if (chapter.quiz) {
+        const q = chapter.quiz;
+        const quizId = `quiz-${index}`;
+        $quizContainer.classList.remove('hidden');
+        $quizContainer.innerHTML = `
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <p class="text-sm font-bold text-slate-700 uppercase tracking-wide">Punto de Control</p>
+            </div>
+            <p class="text-sm font-semibold text-slate-800 mb-4">${q.question || q.text}</p>
+            <div class="space-y-2" id="${quizId}-options">
+                ${q.options.map((opt, optIdx) => `
+                    <button
+                        class="quiz-option w-full text-left px-4 py-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 hover:border-blue-400 hover:bg-blue-50 transition-all active:scale-[0.99]"
+                        data-quiz-id="${quizId}"
+                        data-option-index="${optIdx}"
+                        data-correct-index="${q.correctIndex}"
+                    >
+                        <span class="inline-flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">${String.fromCharCode(65 + optIdx)}</span>
+                            ${opt}
+                        </span>
+                    </button>
+                `).join('')}
+            </div>
+            <div id="${quizId}-feedback" class="mt-4 hidden"></div>
+        `;
+
+        $quizContainer.querySelectorAll('.quiz-option').forEach(btn => {
             btn.addEventListener('click', handleQuizAnswer);
         });
+    } else {
+        $quizContainer.classList.add('hidden');
+        $quizContainer.innerHTML = '';
+    }
 
-        // 4.4 Generar Menú Lateral (si hay secciones)
-        if (Array.isArray(data) && data.length > 0) {
-            const $nav = $sidebar.querySelector('nav');
-            if ($nav) {
-                const indexHtml = `
-                    <div class="my-6 border-t border-slate-100"></div>
-                    <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-slate-400">Índice del Curso</p>
-                    ${data.map((item, idx) => `
-                        <a href="#section-${idx}" class="flex items-center gap-3 px-4 py-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-xs transition-all truncate" title="${item.section}">
-                            <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                            ${item.section}
-                        </a>
-                    `).join('')}
-                `;
-                $nav.insertAdjacentHTML('beforeend', indexHtml);
-            }
+    // Pagination buttons logic
+    if ($btnPrev) {
+        if (index > 0) $btnPrev.classList.remove('hidden');
+        else $btnPrev.classList.add('hidden');
+    }
+
+    if ($btnNext) {
+        $btnNext.classList.add('hidden'); // Oculto hasta resolver quiz o si no hay quiz lo mostramos?
+        if (!chapter.quiz && index < courseChapters.length - 1) {
+            $btnNext.classList.remove('hidden');
         }
-    } else if ($content) {
-        $content.innerHTML = `<p class="text-slate-500 italic">Este curso no tiene contenido disponible.</p>`;
     }
 }
 
@@ -239,13 +304,17 @@ function handleQuizAnswer(e) {
                 <p class="text-sm font-semibold text-emerald-800">¡Correcto! Has comprendido esta sección.</p>
             </div>
         `;
+        const $btnNext = document.getElementById("btn-next");
+        if ($btnNext && currentChapterIndex < courseChapters.length - 1) {
+            $btnNext.classList.remove('hidden');
+        }
     } else {
         $feedback.innerHTML = `
             <div class="flex items-center gap-3 p-4 rounded-lg bg-red-50 border border-red-200">
                 <svg class="w-5 h-5 text-red-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
-                <p class="text-sm font-semibold text-red-800">Respuesta incorrecta. Revisa el párrafo anterior e intenta de nuevo.</p>
+                <p class="text-sm font-semibold text-red-800">Respuesta incorrecta. Revisa la hoja anterior e intenta de nuevo.</p>
             </div>
         `;
         // Permitir reintentar después de 2.5 segundos
