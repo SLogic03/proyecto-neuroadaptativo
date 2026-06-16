@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentChapterIndex--;
                 if (window.resetNeuroAdaptation) window.resetNeuroAdaptation();
                 renderChapter(currentChapterIndex);
-                window.scrollTo(0,0);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
     }
@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentChapterIndex++;
                 if (window.resetNeuroAdaptation) window.resetNeuroAdaptation();
                 renderChapter(currentChapterIndex);
-                window.scrollTo(0,0);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
     }
@@ -251,7 +251,10 @@ function renderChapter(index) {
     }
 
     if ($btnNext) {
-        $btnNext.classList.add('hidden'); // Oculto hasta resolver quiz o si no hay quiz lo mostramos?
+        // Siempre reiniciar texto y ocultar hasta resolver quiz
+        $btnNext.innerText = 'Siguiente Hoja';
+        $btnNext.onclick = null; // Limpiar override de "Finalizar Curso"
+        $btnNext.classList.add('hidden');
         if (!chapter.quiz && index < courseChapters.length - 1) {
             $btnNext.classList.remove('hidden');
         }
@@ -304,9 +307,18 @@ function handleQuizAnswer(e) {
                 <p class="text-sm font-semibold text-emerald-800">¡Correcto! Has comprendido esta sección.</p>
             </div>
         `;
+        // Desbloquear botón siguiente
         const $btnNext = document.getElementById("btn-next");
-        if ($btnNext && currentChapterIndex < courseChapters.length - 1) {
-            $btnNext.classList.remove('hidden');
+        if ($btnNext) {
+            if (currentChapterIndex < courseChapters.length - 1) {
+                $btnNext.classList.remove('hidden');
+                $btnNext.innerText = 'Siguiente Hoja';
+            } else {
+                // Última hoja → Finalizar Curso
+                $btnNext.classList.remove('hidden');
+                $btnNext.innerText = 'Finalizar Curso';
+                $btnNext.onclick = () => { window.location.href = 'dashboard.html'; };
+            }
         }
     } else {
         $feedback.innerHTML = `
