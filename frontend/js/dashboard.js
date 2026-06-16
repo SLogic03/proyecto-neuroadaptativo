@@ -97,32 +97,33 @@ async function loadMyCourses() {
             return;
         }
 
-        // Renderizar tarjetas mejoradas
+        // Renderizar tarjetas mejoradas estilo Moodle
         $container.innerHTML = courses.map(c => `
             <div onclick="window.location.href='reading.html?courseId=${c.id}'"
-                 class="group relative bg-white rounded-2xl border border-slate-200 p-5 cursor-pointer
-                        hover:shadow-xl hover:-translate-y-1 hover:border-blue-300
-                        transition-all duration-300 overflow-hidden">
-                <!-- Accent bar -->
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-200 transition-colors duration-300">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                        </svg>
+                 class="group bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-200 cursor-pointer overflow-hidden flex flex-col">
+                
+                <!-- Top Header / Image Area -->
+                <div class="h-24 bg-gradient-to-r from-slate-800 to-blue-900 relative">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                </div>
+
+                <!-- Course Info -->
+                <div class="p-5 flex-1 flex flex-col">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Módulo</p>
+                    <p class="text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors duration-200 line-clamp-2">
+                        ${c.title}
+                    </p>
+                    <p class="text-sm text-slate-500 mt-2 line-clamp-2 flex-1">${c.description || 'Sin descripción'}</p>
+                </div>
+
+                <!-- Simulated Progress Bar -->
+                <div class="px-5 pb-5 mt-auto">
+                    <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+                        <span class="font-medium">Progreso general</span>
+                        <span class="font-bold text-slate-700">0%</span>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors duration-200 truncate">
-                            ${c.title}
-                        </p>
-                        <p class="text-xs text-slate-500 mt-1 truncate">${c.description || 'Sin descripción'}</p>
-                    </div>
-                    <div class="flex items-center gap-3 shrink-0">
-                        <span class="px-3 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-wide">Activo</span>
-                        <svg class="w-5 h-5 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
+                    <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-blue-600 h-1.5 rounded-full" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
