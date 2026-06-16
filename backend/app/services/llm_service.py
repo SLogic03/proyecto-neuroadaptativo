@@ -137,21 +137,42 @@ async def get_dom_directives(
         return FALLBACK_RESPONSE
 
 
-async def simplify_text(text: str) -> str:
-    """Utiliza Gemini para generar un resumen simplificado del texto dado."""
+async def simplify_text(text: str, level: int = 1) -> str:
+    """Utiliza Gemini para generar un resumen simplificado del texto dado.
+
+    Args:
+        text: Texto original a simplificar.
+        level: Nivel de adaptación progresiva (2 = párrafos concisos, 3+ = viñetas).
+    """
     try:
-        print(f"[LLM] Solicitando simplificación de texto ({len(text)} caracteres)...")
-        
-        prompt = (
-            "Actúa como un tutor experto en accesibilidad cognitiva. "
-            "Tu tarea es tomar el siguiente texto, que puede ser complejo o legal, "
-            "y resumirlo en unas pocas viñetas (bullet points) usando un lenguaje "
-            "extremadamente claro, sencillo y directo. "
-            "Usa emojis para hacerlo más amigable.\n\n"
-            f"Texto original:\n{text}\n\n"
-            "Resumen simplificado en formato HTML (usa <ul> y <li>):"
-        )
-        
+        print(f"[LLM] Solicitando simplificación de texto ({len(text)} caracteres, nivel {level})...")
+
+        # ── Prompt dinámico según el nivel de adaptación ────────────
+        if level == 2:
+            prompt = (
+                "Reescribe el siguiente texto acortando los párrafos para que sean "
+                "ideas muy concisas y fáciles de leer. "
+                "Devuelve SOLO código HTML usando etiquetas <p>.\n\n"
+                f"Texto original:\n{text}"
+            )
+        elif level >= 3:
+            prompt = (
+                "Transforma el siguiente texto en un resumen muy directo usando "
+                "viñetas (bullet points) para un estudiante estresado. "
+                "Devuelve SOLO código HTML usando <ul> y <li>.\n\n"
+                f"Texto original:\n{text}"
+            )
+        else:
+            prompt = (
+                "Actúa como un tutor experto en accesibilidad cognitiva. "
+                "Tu tarea es tomar el siguiente texto, que puede ser complejo o legal, "
+                "y resumirlo en unas pocas viñetas (bullet points) usando un lenguaje "
+                "extremadamente claro, sencillo y directo. "
+                "Usa emojis para hacerlo más amigable.\n\n"
+                f"Texto original:\n{text}\n\n"
+                "Resumen simplificado en formato HTML (usa <ul> y <li>):"
+            )
+
         model = genai.GenerativeModel(
             model_name=MODEL_NAME,
             generation_config=genai.GenerationConfig(
@@ -159,10 +180,10 @@ async def simplify_text(text: str) -> str:
                 max_output_tokens=512,
             ),
         )
-        
+
         response = await model.generate_content_async(prompt)
         return response.text.strip()
-        
+
     except Exception as e:
         print(f"[LLM][ERROR] Fallo en simplificación de texto: {type(e).__name__}: {e}")
         return "<ul><li>No se pudo generar el resumen simplificado debido a un error de conexión con la IA.</li></ul>"

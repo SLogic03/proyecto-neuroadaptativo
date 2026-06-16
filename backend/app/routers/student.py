@@ -85,6 +85,7 @@ from app.services.llm_service import simplify_text
 
 class SimplifyRequest(BaseModel):
     text: str
+    level: int = 1
 
 @router.post("/simplify")
 async def simplify_course_content(
@@ -101,5 +102,5 @@ async def simplify_course_content(
             detail="El texto a simplificar no puede estar vacío."
         )
     
-    summary_html = await simplify_text(request.text)
+    summary_html = await simplify_text(request.text, request.level)
     return {"summary": summary_html}

@@ -12,6 +12,7 @@ ws.onerror = (err) => console.error("WebSocket error:", err);
 ws.onclose = (e) => console.error(`WebSocket cerrado: code=${e.code} reason=${e.reason} wasClean=${e.wasClean}`);
 
 let telemetryBuffer = [];
+let currentAdaptationLevel = 0;
 
 // Variables de estado para calcular deltas (diferencias)
 // Usamos performance.now() para alta resolución temporal (µs precision)
@@ -187,20 +188,77 @@ ws.onmessage = (event) => {
  * @param {Object} directives - JSON con claves: action, theme, font_size,
  *                               line_height, hide_sidebar, simplify_content, message
  */
-function applyNeuroAdaptation(directives) {
+async function applyNeuroAdaptation(directives) {
     console.log(`[NeuroAdapt] Aplicando adaptación: ${directives.action}`);
 
     const root = document.documentElement;
     const sidebar = document.getElementById('sidebar');
     const container = document.getElementById('reading-container');
+    const readingContent = document.getElementById('reading-content');
 
     if (directives.action === 'adapt' || directives.action === 'stress_detected') {
-        // Apply stress-relieving neuro-friendly styles (MORE PROMINENT)
-        root.style.setProperty('--dyn-font-size', '1.4rem');
-        root.style.setProperty('--dyn-line-height', '2.0');
-        root.style.setProperty('--dyn-letter-spacing', '0.06em');
-        root.style.setProperty('--dyn-bg-color', '#FEF3C7'); // Warm amber background
-        root.style.setProperty('--dyn-text-color', '#334155'); // Softer text color
+        // ── Incrementar nivel de adaptación progresiva ─────────────
+        currentAdaptationLevel++;
+        console.log(`[NeuroAdapt] Nivel de adaptación progresiva: ${currentAdaptationLevel}`);
+
+        // ── NIVEL 1: Solo mutación CSS (sin llamada al backend) ───
+        if (currentAdaptationLevel === 1) {
+            root.style.setProperty('--dyn-font-size', '1.25rem');
+            root.style.setProperty('--dyn-line-height', '1.9');
+            root.style.setProperty('--dyn-letter-spacing', '0.03em');
+            root.style.setProperty('--dyn-bg-color', '#fef9c3'); // Crema suave
+            root.style.setProperty('--dyn-text-color', '#334155');
+
+            if (readingContent) {
+                readingContent.style.backgroundColor = '#fef9c3';
+                readingContent.style.fontSize = '1.25rem';
+                readingContent.style.lineHeight = '1.9';
+            }
+        }
+
+        // ── NIVEL >= 2: Llamada al backend para simplificar texto ─
+        if (currentAdaptationLevel >= 2) {
+            root.style.setProperty('--dyn-font-size', '1.4rem');
+            root.style.setProperty('--dyn-line-height', '2.0');
+            root.style.setProperty('--dyn-letter-spacing', '0.06em');
+            root.style.setProperty('--dyn-bg-color', '#FEF3C7');
+            root.style.setProperty('--dyn-text-color', '#334155');
+
+            // Extraer texto original del contenido de lectura
+            const originalText = readingContent ? readingContent.innerText : '';
+
+            if (originalText.trim().length > 0) {
+                const token = localStorage.getItem('neuroadapt_token');
+                const API_BASE = window.location.protocol === 'https:'
+                    ? `https://${window.location.host}`
+                    : `http://${window.location.host}`;
+
+                try {
+                    const response = await fetch(`${API_BASE}/student/simplify`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            text: originalText,
+                            level: currentAdaptationLevel
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (readingContent) {
+                            readingContent.innerHTML = data.summary;
+                        }
+                    } else {
+                        console.error(`[NeuroAdapt] Error del servidor: ${response.status}`);
+                    }
+                } catch (err) {
+                    console.error('[NeuroAdapt] Error en simplificación:', err);
+                }
+            }
+        }
 
         // Hide sidebar if requested to reduce cognitive load
         if (directives.hide_sidebar) {
@@ -212,32 +270,9 @@ function applyNeuroAdaptation(directives) {
                 container.classList.add('ml-0');
             }
         }
-        // Si el LLM dictamina que se debe simplificar el contenido
-        if (directives.simplify_content) {
-            triggerLLMSummary();
-        }
-        
-    } else {
-        // Restore normal base styles
-        root.style.setProperty('--dyn-font-size', '1.125rem');
-        root.style.setProperty('--dyn-line-height', '1.75');
-        root.style.setProperty('--dyn-letter-spacing', 'normal');
-        root.style.setProperty('--dyn-bg-color', '#f8fafc');
-        root.style.setProperty('--dyn-text-color', '#1e293b');
-
-        // Restore sidebar
-        if (sidebar) {
-            sidebar.classList.remove('-translate-x-full');
-        }
-        if (container) {
-            container.classList.remove('ml-0');
-            container.classList.add('ml-64');
-        }
-        
-        // Hide agent panel
-        const agentPanel = document.getElementById('agent-panel');
-        if (agentPanel) agentPanel.classList.add('hidden');
     }
+    // NOTA: Se eliminó el bloque 'else' que revertía estilos (efecto rebote).
+    // Los cambios neuroadaptativos son permanentes durante la sesión.
 
     // Ephemeral visual notification
     if (directives.message) {
