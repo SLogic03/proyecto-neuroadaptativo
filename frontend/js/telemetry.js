@@ -14,27 +14,63 @@ ws.onclose = (e) => console.error(`WebSocket cerrado: code=${e.code} reason=${e.
 let telemetryBuffer = [];
 
 // Variables de estado para calcular deltas (diferencias)
+// Usamos performance.now() para alta resolución temporal (µs precision)
 let lastX = null, lastY = null, lastTimeMouse = null;
 let lastVelocity = 0;
+let lastAcceleration = 0; // Necesario para calcular jerk (da/dt)
 let lastKeyTime = null;
 let hoverTimers = {}; // Diccionario para medir el Dwell Time
 
-// 1. Cinemática del Ratón (Velocidad y Aceleración)
+// Acumulador para throttling de dt mínimo (8ms)
+let accumulatedDistance = 0;
+
+// Constantes de filtrado
+const DEADZONE_PX = 2;    // Distancia mínima para ignorar jitter del hardware
+const MIN_DT_MS = 8;      // Delta time mínimo para calcular derivadas (evita picos)
+
+// 1. Cinemática del Ratón (Velocidad, Aceleración y Jerk)
 document.addEventListener('mousemove', (event) => {
-    const currentTime = Date.now();
+    const currentTime = performance.now(); // Alta resolución temporal (sub-ms)
     let velocity = 0;
     let acceleration = 0;
+    let jerk = 0;
 
     if (lastX !== null && lastTimeMouse !== null) {
+        // Distancia euclidiana desde el último punto registrado
+        const dx = event.clientX - lastX;
+        const dy = event.clientY - lastY;
+        const distance = Math.hypot(dx, dy);
+
+        // FILTRO DEADZONE: ignorar micro-movimientos de jitter del hardware
+        if (distance < DEADZONE_PX) {
+            return; // Descartamos el evento ruidoso
+        }
+
         const deltaTime = currentTime - lastTimeMouse;
 
-        if (deltaTime > 0) { // Evitamos divisiones por cero
-            // Teorema de Pitágoras para la distancia euclidiana
-            const distance = Math.sqrt(Math.pow(event.clientX - lastX, 2) + Math.pow(event.clientY - lastY, 2));
-
-            velocity = distance / deltaTime; // px/ms
-            acceleration = (velocity - lastVelocity) / deltaTime; // px/ms^2
+        // PROTECCIÓN CONTRA PICOS: si dt < 8ms, acumulamos distancia
+        // pero NO calculamos nuevas derivadas (evita v → ∞)
+        if (deltaTime < MIN_DT_MS) {
+            accumulatedDistance += distance;
+            // Actualizamos posición pero NO el timestamp ni la velocidad
+            lastX = event.clientX;
+            lastY = event.clientY;
+            return;
         }
+
+        // Incluimos cualquier distancia acumulada durante el throttling
+        const totalDistance = accumulatedDistance + distance;
+        accumulatedDistance = 0; // Reset del acumulador
+
+        // Derivadas cinemáticas con dt real
+        velocity = totalDistance / deltaTime; // px/ms
+        acceleration = (velocity - lastVelocity) / deltaTime; // px/ms²
+        jerk = (acceleration - lastAcceleration) / deltaTime; // px/ms³
+
+        // Guardia contra Infinity y NaN en las derivadas
+        if (!isFinite(velocity))     velocity = 0;
+        if (!isFinite(acceleration)) acceleration = 0;
+        if (!isFinite(jerk))         jerk = 0;
     }
 
     const mouseData = {
@@ -43,6 +79,7 @@ document.addEventListener('mousemove', (event) => {
         y: event.clientY,
         v: parseFloat(velocity.toFixed(4)), // Redondeamos para no saturar la BD
         a: parseFloat(acceleration.toFixed(6)),
+        jerk: parseFloat(jerk.toFixed(8)),
         timestamp: currentTime
     };
 
@@ -53,11 +90,12 @@ document.addEventListener('mousemove', (event) => {
     lastY = event.clientY;
     lastTimeMouse = currentTime;
     lastVelocity = velocity;
+    lastAcceleration = acceleration;
 }, { passive: true });
 
 // 2. Latencia de Teclado (Tiempo entre teclas)
 document.addEventListener('keydown', (event) => {
-    const currentTime = Date.now();
+    const currentTime = performance.now(); // Alta resolución temporal
     let latency = 0;
 
     if (lastKeyTime !== null) {
@@ -67,12 +105,12 @@ document.addEventListener('keydown', (event) => {
     const keyData = {
         type: 'keystroke_latency',
         key_code: event.code,
-        latency_ms: latency,
+        latency_ms: parseFloat(latency.toFixed(2)), // Sub-ms precision
         timestamp: currentTime
     };
 
     telemetryBuffer.push(keyData);
-    console.log("Latencia de tipeo:", latency, "ms"); // Log de prueba
+    console.log("Latencia de tipeo:", latency.toFixed(2), "ms"); // Log de prueba
 
     lastKeyTime = currentTime;
 }, { passive: true });
@@ -84,7 +122,7 @@ document.querySelectorAll('button, input').forEach(element => {
     // Inicia el cronómetro al entrar
     element.addEventListener('mouseenter', (e) => {
         const targetId = e.target.id || 'elemento_sin_id';
-        hoverTimers[targetId] = Date.now();
+        hoverTimers[targetId] = performance.now();
     }, { passive: true });
 
     // Detiene el cronómetro al salir y calcula el Dwell Time
@@ -92,13 +130,13 @@ document.querySelectorAll('button, input').forEach(element => {
         const targetId = e.target.id || 'elemento_sin_id';
 
         if (hoverTimers[targetId]) {
-            const dwellTime = Date.now() - hoverTimers[targetId];
+            const dwellTime = performance.now() - hoverTimers[targetId];
 
             const dwellData = {
                 type: 'dwell_time',
                 element_id: targetId,
                 duration_ms: dwellTime,
-                timestamp: Date.now()
+                timestamp: performance.now()
             };
 
             telemetryBuffer.push(dwellData);
@@ -128,9 +166,14 @@ ws.onmessage = (event) => {
         const directives = JSON.parse(event.data);
         console.log("Directivas neuroadaptativas recibidas:", directives);
 
-        if (directives.action && directives.action !== "none") {
-            applyNeuroAdaptation(directives);
+        // Si el estado cognitivo es Normal, forzamos action a 'none' para restaurar la UI
+        if (directives.cognitive_state === "Normal" || directives.atypical === false) {
+            directives.action = "none";
         }
+
+        // Siempre llamamos a la función de adaptación, ya sea para adaptar o restaurar
+        applyNeuroAdaptation(directives);
+        
     } catch (err) {
         console.error("Error parseando directivas del backend:", err);
     }

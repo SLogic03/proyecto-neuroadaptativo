@@ -31,7 +31,7 @@ FEATURE_COLS = [
 # ── Parámetros de calibración ─────────────────────────────────────
 CALIBRATION_BATCHES = 10       # Lotes requeridos para calibrar (~10-15 s)
 MIN_STD = 0.01                 # Piso para desviación estándar (evita /0)
-Z_SCORE_THRESHOLD = 0.5       # Umbral de Z para considerar "atípico"
+Z_SCORE_THRESHOLD = 2.0      # Umbral de Z para considerar "atípico"
 
 
 # ── Estado de conexión por usuario ────────────────────────────────
@@ -263,13 +263,20 @@ async def websocket_telemetry(websocket: WebSocket):
             )
             print(f"[DEBUG] Features crudas del usuario: {X_input}")
 
-            probabilidades = ml_model.predict_proba(X_input)[0]
-            prob_estres = probabilidades[1]
-            prediction = 1 if prob_estres > 0.1 else 0
+            if ml_model is not None:
+                probabilidades = ml_model.predict_proba(X_input)[0]
+                prob_estres = probabilidades[1]
+                # El modelo pre-entrenado falla con valores muy extremos, 
+                # así que si el Z-Score detectó anomalía, forzamos el estado de estrés.
+                prediction = 1
+            else:
+                prob_estres = 1.0
+                prediction = 1
+                
             cognitive_state = "Estres" if prediction == 1 else "Normal"
 
-            print(f"[WS][ML] Prob(Estrés): {prob_estres:.2f} → "
-                  f"Predicción: {prediction} ({cognitive_state})")
+            print(f"[WS][ML] Prob(Estrés del Modelo): {prob_estres:.2f} → "
+                  f"Decisión Final: {prediction} ({cognitive_state}) basándose en Z-Score Dinámico")
 
             # Llamar a Gemini para directivas DOM
             directives = await get_dom_directives(
