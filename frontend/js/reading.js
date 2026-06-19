@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ── 2. Inicialización ────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     // Extraer courseId de la URL
     const urlParams = new URLSearchParams(window.location.search);
     const courseId = urlParams.get('courseId');
@@ -54,8 +54,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     loadSidebarCourses(courseId);
+
+    // ── Verificar calibración antes de cargar contenido ──────────
+    const userId = currentUser ? (currentUser.id || currentUser.email || 'default') : 'default';
+
+    if (window.CalibrationModule && !window.CalibrationModule.hasCalibration(userId)) {
+        // Primera vez: ejecutar calibración
+        console.log('[Reading] Usuario sin calibración. Iniciando modal...');
+        const baseline = await window.CalibrationModule.startCalibration(userId);
+        window._neuroBaseline = baseline;
+        console.log('[Reading] Calibración completada:', baseline);
+    } else if (window.CalibrationModule) {
+        // Ya calibrado: cargar baseline existente
+        const baseline = window.CalibrationModule.getCalibration(userId);
+        window._neuroBaseline = baseline;
+        console.log('[Reading] Baseline existente cargado:', baseline);
+    }
+
+    // Ahora sí, cargar el curso
     loadCourseData(courseId);
 
+    // ── Event listeners de paginación ────────────────────────────
     const $btnPrev = document.getElementById("btn-prev");
     const $btnNext = document.getElementById("btn-next");
     

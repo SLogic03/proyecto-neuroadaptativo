@@ -281,17 +281,21 @@ async function applyNeuroAdaptation(directives) {
 }
 
 window.resetNeuroAdaptation = function() {
+    // Reset adaptation level to 0 (calibrated baseline)
     if (typeof currentAdaptationLevel !== 'undefined') {
         currentAdaptationLevel = 0;
     }
+
+    // Reset visual styles on reading content
     const content = document.getElementById('reading-content');
     if (content) {
         content.style.backgroundColor = '';
         content.style.fontSize = '';
+        content.style.lineHeight = '';
         content.classList.remove('bg-yellow-50', 'text-lg', 'p-4'); 
     }
     
-    // Also reset root vars to default
+    // Restore CSS vars to default (pre-adaptation state)
     const root = document.documentElement;
     root.style.setProperty('--dyn-font-size', '1.125rem');
     root.style.setProperty('--dyn-line-height', '1.75');
@@ -299,7 +303,28 @@ window.resetNeuroAdaptation = function() {
     root.style.setProperty('--dyn-bg-color', '#f8fafc');
     root.style.setProperty('--dyn-text-color', '#1e293b');
 
-    console.log("[UX] Estado de Neuroadaptación reiniciado para la nueva página.");
+    // Restore sidebar if it was hidden
+    const sidebar = document.getElementById('sidebar');
+    const container = document.getElementById('reading-container');
+    if (sidebar) {
+        sidebar.classList.remove('-translate-x-full');
+    }
+    if (container) {
+        container.classList.add('ml-64');
+        container.classList.remove('ml-0');
+    }
+
+    // Reset telemetry kinematic state to calibrated baseline
+    lastVelocity = 0;
+    lastAcceleration = 0;
+    accumulatedDistance = 0;
+
+    // Log baseline status
+    if (window._neuroBaseline) {
+        console.log("[UX] Neuroadaptación reiniciada al baseline calibrado:", window._neuroBaseline.calibratedAt);
+    } else {
+        console.log("[UX] Neuroadaptación reiniciada (sin baseline calibrado).");
+    }
 };
 
 let isSummarizing = false;
