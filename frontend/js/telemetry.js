@@ -152,6 +152,10 @@ document.querySelectorAll('button, input').forEach(element => {
 // Envío por lotes al backend vía WebSocket
 // ==========================================
 setInterval(() => {
+    // Don't send telemetry during calibration — prevents backend from
+    // triggering DOM adaptations while the user is being calibrated
+    if (window._isCalibrating) return;
+
     if (telemetryBuffer.length > 0 && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(telemetryBuffer));
         telemetryBuffer = [];
@@ -162,18 +166,32 @@ setInterval(() => {
 // Recepción de directivas neuroadaptativas
 // del backend (ML + Gemini) vía WebSocket
 // ==========================================
+
+// Flag to prevent concurrent consent modals
+let _consentPending = false;
+
 ws.onmessage = (event) => {
     try {
         const directives = JSON.parse(event.data);
         console.log("Directivas neuroadaptativas recibidas:", directives);
 
-        // Si el estado cognitivo es Normal, forzamos action a 'none' para restaurar la UI
+        // Block ALL adaptations during calibration
+        if (window._isCalibrating) {
+            console.log('[NeuroAdapt] Ignorando directivas — calibración en curso.');
+            return;
+        }
+
+        // If cognitive state is Normal, no action needed
         if (directives.cognitive_state === "Normal" || directives.atypical === false) {
             directives.action = "none";
         }
 
-        // Siempre llamamos a la función de adaptación, ya sea para adaptar o restaurar
-        applyNeuroAdaptation(directives);
+        if (directives.action === 'adapt' || directives.action === 'stress_detected') {
+            // Don't show another modal if one is already pending
+            if (_consentPending) return;
+            showStressConsentModal(directives);
+        }
+        // No action for 'none' — changes are permanent during session
         
     } catch (err) {
         console.error("Error parseando directivas del backend:", err);
@@ -181,9 +199,65 @@ ws.onmessage = (event) => {
 };
 
 /**
+ * Shows a consent modal asking the user whether they want to apply
+ * stress-reduction adaptations. Only applies if user accepts.
+ */
+function showStressConsentModal(directives) {
+    const modal = document.getElementById('stress-consent-modal');
+    if (!modal) {
+        // Fallback: apply directly if modal doesn't exist
+        applyNeuroAdaptation(directives);
+        return;
+    }
+
+    _consentPending = true;
+
+    const nextLevel = currentAdaptationLevel + 1;
+    const titleEl = document.getElementById('stress-consent-title');
+    const descEl = document.getElementById('stress-consent-description');
+
+    // Customize message based on adaptation level
+    if (nextLevel === 1) {
+        if (titleEl) titleEl.textContent = 'Se detectó estrés cognitivo';
+        if (descEl) descEl.textContent = 'El sistema ha detectado un patrón atípico en tu comportamiento. ¿Deseas aplicar ajustes visuales suaves (tipografía más grande, fondo cálido) para reducir la carga cognitiva?';
+    } else if (nextLevel === 2) {
+        if (titleEl) titleEl.textContent = 'El estrés persiste';
+        if (descEl) descEl.textContent = 'Seguimos detectando indicadores de estrés. ¿Deseas que la IA simplifique el contenido en párrafos más concisos y fáciles de leer?';
+    } else {
+        if (titleEl) titleEl.textContent = 'Nivel de estrés elevado';
+        if (descEl) descEl.textContent = 'Se mantiene un patrón de estrés elevado. ¿Deseas que el contenido se transforme en viñetas resumidas para lectura rápida?';
+    }
+
+    // Show modal
+    modal.classList.remove('hidden');
+
+    // Setup handlers (clone to remove old listeners)
+    const acceptBtn = document.getElementById('stress-consent-accept');
+    const rejectBtn = document.getElementById('stress-consent-reject');
+    const newAccept = acceptBtn.cloneNode(true);
+    const newReject = rejectBtn.cloneNode(true);
+    acceptBtn.parentNode.replaceChild(newAccept, acceptBtn);
+    rejectBtn.parentNode.replaceChild(newReject, rejectBtn);
+
+    newAccept.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        _consentPending = false;
+        applyNeuroAdaptation(directives);
+    });
+
+    newReject.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        _consentPending = false;
+        console.log('[NeuroAdapt] Usuario rechazó la adaptación.');
+        showNeuroNotification('Adaptación omitida. Se preguntará nuevamente si se detecta estrés.', 'none');
+    });
+}
+
+/**
  * Aplica las directivas de adaptación cognitiva al DOM.
  * Modifica estilos, visibilidad y layout según el JSON
  * generado por el motor Gemini en el backend.
+ * Now theme-aware: uses different colors for dark vs light mode.
  *
  * @param {Object} directives - JSON con claves: action, theme, font_size,
  *                               line_height, hide_sidebar, simplify_content, message
@@ -195,10 +269,12 @@ async function applyNeuroAdaptation(directives) {
     const sidebar = document.getElementById('sidebar');
     const container = document.getElementById('reading-container');
     const readingContent = document.getElementById('reading-content');
+    const isDark = root.getAttribute('data-theme') === 'dark';
 
     if (directives.action === 'adapt' || directives.action === 'stress_detected') {
         // ── Incrementar nivel de adaptación progresiva ─────────────
         currentAdaptationLevel++;
+        root.setAttribute('data-stress-level', String(currentAdaptationLevel));
         console.log(`[NeuroAdapt] Nivel de adaptación progresiva: ${currentAdaptationLevel}`);
 
         // ── NIVEL 1: Solo mutación CSS (sin llamada al backend) ───
@@ -206,13 +282,26 @@ async function applyNeuroAdaptation(directives) {
             root.style.setProperty('--dyn-font-size', '1.25rem');
             root.style.setProperty('--dyn-line-height', '1.9');
             root.style.setProperty('--dyn-letter-spacing', '0.03em');
-            root.style.setProperty('--dyn-bg-color', '#fef9c3'); // Crema suave
-            root.style.setProperty('--dyn-text-color', '#334155');
 
-            if (readingContent) {
-                readingContent.style.backgroundColor = '#fef9c3';
-                readingContent.style.fontSize = '1.25rem';
-                readingContent.style.lineHeight = '1.9';
+            if (isDark) {
+                // Dark mode: use deep navy/indigo tones for calm
+                root.style.setProperty('--dyn-bg-color', '#1a1a2e');
+                root.style.setProperty('--dyn-text-color', '#d1d5db');
+                root.style.setProperty('--surface-bg', '#1e1e36');
+                if (readingContent) {
+                    readingContent.style.backgroundColor = '#1e1e36';
+                    readingContent.style.fontSize = '1.25rem';
+                    readingContent.style.lineHeight = '1.9';
+                }
+            } else {
+                // Light mode: warm cream tones
+                root.style.setProperty('--dyn-bg-color', '#fef9c3');
+                root.style.setProperty('--dyn-text-color', '#334155');
+                if (readingContent) {
+                    readingContent.style.backgroundColor = '#fef9c3';
+                    readingContent.style.fontSize = '1.25rem';
+                    readingContent.style.lineHeight = '1.9';
+                }
             }
         }
 
@@ -221,8 +310,15 @@ async function applyNeuroAdaptation(directives) {
             root.style.setProperty('--dyn-font-size', '1.4rem');
             root.style.setProperty('--dyn-line-height', '2.0');
             root.style.setProperty('--dyn-letter-spacing', '0.06em');
-            root.style.setProperty('--dyn-bg-color', '#FEF3C7');
-            root.style.setProperty('--dyn-text-color', '#334155');
+
+            if (isDark) {
+                root.style.setProperty('--dyn-bg-color', '#1a1a2e');
+                root.style.setProperty('--dyn-text-color', '#e5e7eb');
+                root.style.setProperty('--surface-bg', '#1e1e36');
+            } else {
+                root.style.setProperty('--dyn-bg-color', '#FEF3C7');
+                root.style.setProperty('--dyn-text-color', '#334155');
+            }
 
             // Extraer texto original del contenido de lectura
             const originalText = readingContent ? readingContent.innerText : '';
@@ -286,6 +382,9 @@ window.resetNeuroAdaptation = function() {
         currentAdaptationLevel = 0;
     }
 
+    // Reset consent pending flag
+    _consentPending = false;
+
     // Reset visual styles on reading content
     const content = document.getElementById('reading-content');
     if (content) {
@@ -295,13 +394,24 @@ window.resetNeuroAdaptation = function() {
         content.classList.remove('bg-yellow-50', 'text-lg', 'p-4'); 
     }
     
-    // Restore CSS vars to default (pre-adaptation state)
+    // Detect current theme to restore proper defaults
     const root = document.documentElement;
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    root.removeAttribute('data-stress-level');
+
     root.style.setProperty('--dyn-font-size', '1.125rem');
     root.style.setProperty('--dyn-line-height', '1.75');
     root.style.setProperty('--dyn-letter-spacing', 'normal');
-    root.style.setProperty('--dyn-bg-color', '#f8fafc');
-    root.style.setProperty('--dyn-text-color', '#1e293b');
+
+    if (isDark) {
+        root.style.setProperty('--dyn-bg-color', '#0f172a');
+        root.style.setProperty('--dyn-text-color', '#e2e8f0');
+        root.style.setProperty('--surface-bg', '#1e293b');
+    } else {
+        root.style.setProperty('--dyn-bg-color', '#f8fafc');
+        root.style.setProperty('--dyn-text-color', '#1e293b');
+        root.style.setProperty('--surface-bg', '#ffffff');
+    }
 
     // Restore sidebar if it was hidden
     const sidebar = document.getElementById('sidebar');

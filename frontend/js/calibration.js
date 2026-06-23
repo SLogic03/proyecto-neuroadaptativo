@@ -10,6 +10,35 @@
  */
 
 const CALIBRATION_KEY_PREFIX = 'neuroadapt_calibration_';
+const THEME_KEY_PREFIX = 'neuroadapt_theme_';
+
+// ── Theme Application ───────────────────────────────────────────
+function applyTheme(preference) {
+    let theme = preference || 'auto';
+    if (theme === 'auto') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+    console.log(`[Theme] Aplicado: ${theme} (preferencia: ${preference || 'auto'})`);
+}
+
+function getSavedTheme(userId) {
+    return localStorage.getItem(THEME_KEY_PREFIX + userId) || 'auto';
+}
+
+function saveTheme(userId, theme) {
+    localStorage.setItem(THEME_KEY_PREFIX + userId, theme);
+}
+
+// Listen for system theme changes when in auto mode
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    const userData = localStorage.getItem('neuroadapt_user');
+    if (userData) {
+        const userId = JSON.parse(userData).id || JSON.parse(userData).email;
+        const savedPref = getSavedTheme(userId);
+        if (savedPref === 'auto') applyTheme('auto');
+    }
+});
 
 // ── Textos para la calibración ──────────────────────────────────
 const CALIBRATION_WRITING_PROMPT = `Escribe con tranquilidad el siguiente texto (cópialo tal cual):
@@ -68,6 +97,9 @@ function startCalibration(userId) {
         const modal = document.getElementById('calibration-modal');
         if (!modal) { resolve(); return; }
 
+        // Block telemetry adaptations during calibration
+        window._isCalibrating = true;
+
         modal.classList.remove('hidden');
         showPhaseIntro(resolve, userId);
     });
@@ -79,6 +111,9 @@ function showPhaseIntro(resolve, userId) {
     const progress = document.getElementById('calibration-progress');
     const title = document.getElementById('calibration-title');
     const subtitle = document.getElementById('calibration-subtitle');
+
+    // Detect current system preference for default selection
+    const currentSaved = getSavedTheme(userId);
 
     title.textContent = 'Calibración de Estrés';
     subtitle.textContent = 'Este breve ejercicio establece tu perfil conductual base. Solo tomará un minuto.';
@@ -92,14 +127,53 @@ function showPhaseIntro(resolve, userId) {
                 </svg>
             </div>
             <p class="text-slate-600 text-sm mb-2">El sistema necesita conocer tu comportamiento <strong>en estado relajado</strong> para poder detectar estrés con precisión.</p>
-            <p class="text-slate-500 text-xs mb-8">Se medirán tu velocidad de tipeo, movimiento del mouse y ritmo de lectura.</p>
+            <p class="text-slate-500 text-xs mb-6">Se medirán tu velocidad de tipeo, movimiento del mouse y ritmo de lectura.</p>
+
+            <!-- Theme Selector -->
+            <div class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Preferencia de tema visual</p>
+                <div class="flex gap-2 justify-center">
+                    <button data-theme-choice="auto" class="cal-theme-btn flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${currentSaved === 'auto' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>
+                        Auto
+                    </button>
+                    <button data-theme-choice="light" class="cal-theme-btn flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${currentSaved === 'light' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+                        Claro
+                    </button>
+                    <button data-theme-choice="dark" class="cal-theme-btn flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${currentSaved === 'dark' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+                        Oscuro
+                    </button>
+                </div>
+            </div>
+
             <button id="cal-start-btn" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-blue-600/20">
                 Comenzar Calibración
             </button>
         </div>
     `;
 
+    // Theme selector logic
+    let selectedTheme = currentSaved;
+    document.querySelectorAll('.cal-theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedTheme = btn.getAttribute('data-theme-choice');
+            // Update visual selection
+            document.querySelectorAll('.cal-theme-btn').forEach(b => {
+                b.className = b.className.replace(/border-blue-500 bg-blue-50 text-blue-700/g, 'border-slate-200 text-slate-500 hover:border-slate-300');
+            });
+            btn.className = btn.className.replace(/border-slate-200 text-slate-500 hover:border-slate-300/g, 'border-blue-500 bg-blue-50 text-blue-700');
+            // Apply theme preview immediately
+            saveTheme(userId, selectedTheme);
+            applyTheme(selectedTheme);
+        });
+    });
+
     document.getElementById('cal-start-btn').addEventListener('click', () => {
+        // Save final theme choice
+        saveTheme(userId, selectedTheme);
+        applyTheme(selectedTheme);
         showPhase1(resolve, userId);
     });
 }
@@ -344,6 +418,8 @@ function finishCalibration(resolve, userId) {
 
     document.getElementById('cal-finish-btn').addEventListener('click', () => {
         const modal = document.getElementById('calibration-modal');
+        // Unblock telemetry adaptations
+        window._isCalibrating = false;
         // Animate out
         modal.querySelector('.calibration-card').style.transform = 'scale(0.95)';
         modal.querySelector('.calibration-card').style.opacity = '0';
@@ -359,5 +435,8 @@ window.CalibrationModule = {
     hasCalibration,
     getCalibration,
     startCalibration,
-    saveCalibration
+    saveCalibration,
+    applyTheme,
+    getSavedTheme,
+    saveTheme
 };

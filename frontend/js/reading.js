@@ -58,6 +58,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ── Verificar calibración antes de cargar contenido ──────────
     const userId = currentUser ? (currentUser.id || currentUser.email || 'default') : 'default';
 
+    // Apply theme immediately on page load
+    if (window.CalibrationModule) {
+        const savedTheme = window.CalibrationModule.getSavedTheme(userId);
+        window.CalibrationModule.applyTheme(savedTheme);
+    }
+
     if (window.CalibrationModule && !window.CalibrationModule.hasCalibration(userId)) {
         // Primera vez: ejecutar calibración
         console.log('[Reading] Usuario sin calibración. Iniciando modal...');

@@ -27,19 +27,53 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            /* Dynamic variables controlled by LLM via JS */
+        /* ── LIGHT MODE (default) ──────────────────────────────── */
+        :root, [data-theme="light"] {
             --dyn-font-size: 1.125rem;
             --dyn-line-height: 1.75;
             --dyn-letter-spacing: normal;
             --dyn-bg-color: #f8fafc;
             --dyn-text-color: #1e293b;
+            --surface-bg: #ffffff;
+            --surface-border: #e2e8f0;
+            --header-bg: #0f172a;
+            --sidebar-bg: #0f172a;
+            --sidebar-border: #1e293b;
+            --card-bg: #ffffff;
+            --muted-text: #64748b;
+            --quiz-bg: #f8fafc;
+        }
+
+        /* ── DARK MODE ─────────────────────────────────────────── */
+        [data-theme="dark"] {
+            --dyn-bg-color: #0f172a;
+            --dyn-text-color: #e2e8f0;
+            --surface-bg: #1e293b;
+            --surface-border: #334155;
+            --header-bg: #020617;
+            --sidebar-bg: #020617;
+            --sidebar-border: #1e293b;
+            --card-bg: #1e293b;
+            --muted-text: #94a3b8;
+            --quiz-bg: #1e293b;
+        }
+
+        /* Dark mode stress adaptation overrides */
+        [data-theme="dark"][data-stress-level="1"] {
+            --dyn-bg-color: #1a1a2e;
+            --dyn-text-color: #d1d5db;
+        }
+        [data-theme="dark"][data-stress-level="2"],
+        [data-theme="dark"][data-stress-level="3"] {
+            --dyn-bg-color: #1a1a2e;
+            --dyn-text-color: #e5e7eb;
         }
 
         body { 
             background-color: var(--dyn-bg-color);
+            color: var(--dyn-text-color);
             overflow-x: hidden;
-            transition: background-color 0.7s ease-in-out;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
         
         /* Minimalist Scrollbar */
@@ -47,6 +81,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #475569; }
 
         .pulse-dot {
             animation: pulse-dot 2s ease-in-out infinite;
@@ -56,41 +91,68 @@
             50%      { opacity: 0.5; transform: scale(1.4); }
         }
 
-        /* Reading focus guide styles */
         #reading-focus-guide {
-            position: absolute;
-            left: -2rem;
-            right: -2rem;
-            height: 3em;
-            background: rgba(59, 130, 246, 0.05); /* very soft blue */
+            position: absolute; left: -2rem; right: -2rem; height: 3em;
+            background: rgba(59, 130, 246, 0.05);
             border-left: 4px solid #3b82f6;
-            pointer-events: none;
-            transition: top 0.2s ease-out;
-            z-index: 10;
+            pointer-events: none; transition: top 0.2s ease-out; z-index: 10;
         }
 
-        /* Reading content dynamic application */
         #reading-content {
             font-size: var(--dyn-font-size);
             line-height: var(--dyn-line-height);
             letter-spacing: var(--dyn-letter-spacing);
-            background-color: var(--dyn-bg-color);
+            background-color: var(--surface-bg);
             color: var(--dyn-text-color);
+            border-color: var(--surface-border);
             transition: all 0.5s ease-in-out;
         }
+        #reading-content p { margin-bottom: 1.5em; }
 
-        #reading-content p {
-            margin-bottom: 1.5em;
-        }
+        /* Dark mode overrides for key elements */
+        [data-theme="dark"] #reading-content { background-color: var(--card-bg); border-color: var(--surface-border); }
+        [data-theme="dark"] .bg-slate-50, [data-theme="dark"] #quiz-container { background-color: var(--quiz-bg) !important; border-color: var(--surface-border) !important; }
+        [data-theme="dark"] .text-slate-800, [data-theme="dark"] .text-slate-900, [data-theme="dark"] .text-slate-700 { color: var(--dyn-text-color) !important; }
+        [data-theme="dark"] .bg-white { background-color: var(--card-bg) !important; }
+        [data-theme="dark"] .border-slate-200 { border-color: var(--surface-border) !important; }
+        [data-theme="dark"] header.fixed { background-color: var(--header-bg) !important; }
+        [data-theme="dark"] #sidebar { background-color: var(--sidebar-bg) !important; }
+        [data-theme="dark"] .prose h2 { color: #f1f5f9 !important; }
 
-        /* Sidebar transition for agentic mode hiding */
-        #sidebar {
-            transition: transform 0.4s ease-in-out;
-        }
+        #sidebar { transition: transform 0.4s ease-in-out; }
     </style>
 </head>
 
 <body class="font-sans text-slate-800 antialiased min-h-screen bg-slate-50 flex flex-col">
+
+    <!-- STRESS CONSENT MODAL -->
+    <div id="stress-consent-modal" class="hidden fixed inset-0 z-[9998] flex items-center justify-center">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div class="stress-consent-card relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all duration-300" style="transform: scale(1); opacity: 1;">
+            <div class="px-7 py-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="stress-consent-title" class="text-base font-bold text-slate-800">Se detectó estrés cognitivo</h3>
+                        <p id="stress-consent-subtitle" class="text-xs text-slate-500">El sistema puede adaptar la interfaz para reducir la carga</p>
+                    </div>
+                </div>
+                <p id="stress-consent-description" class="text-sm text-slate-600 mb-5 leading-relaxed">Se ha detectado un patrón de estrés en tu comportamiento. ¿Deseas aplicar mejoras visuales para reducir la carga cognitiva?</p>
+                <div class="flex gap-3">
+                    <button id="stress-consent-reject" class="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-all text-sm">
+                        No, gracias
+                    </button>
+                    <button id="stress-consent-accept" class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all text-sm shadow-md">
+                        Sí, adaptar interfaz
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- CALIBRATION MODAL (Full-screen overlay) -->
     <div id="calibration-modal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center">
@@ -217,8 +279,8 @@
 
 
     <!-- Scripts -->
-    <script src="js/calibration.js?v=4"></script>
-    <script src="js/reading.js?v=4"></script>
-    <script src="js/telemetry.js?v=4"></script>
+    <script src="js/calibration.js?v=5"></script>
+    <script src="js/reading.js?v=5"></script>
+    <script src="js/telemetry.js?v=5"></script>
 </body>
 </html>
