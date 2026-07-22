@@ -12,6 +12,15 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    colors: {
+                        background: 'var(--bg-color)',
+                        foreground: 'var(--text-color)',
+                        surface: 'var(--surface-bg)',
+                        card: 'var(--card-bg)',
+                        border: 'var(--surface-border)',
+                        muted: 'var(--muted-text)',
+                        accent: '#3b82f6'
+                    },
                     fontFamily: {
                         'sans': ['Inter', 'system-ui', 'sans-serif'],
                         'serif': ['"Source Serif 4"', 'Georgia', 'serif'],
@@ -27,13 +36,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
 
     <style>
-        body { background-color: #f8fafc; /* slate-50 */ }
+        /* ── LIGHT MODE (default) ──────────────────────────────── */
+        :root, [data-theme="light"] {
+            --bg-color: #fcfcfc;
+            --text-color: #111827;
+            --surface-bg: #ffffff;
+            --surface-border: #e5e7eb;
+            --card-bg: #ffffff;
+            --muted-text: #6b7280;
+        }
+
+        /* ── DARK MODE ─────────────────────────────────────────── */
+        [data-theme="dark"] {
+            --bg-color: #0a0a0a;
+            --text-color: #f3f4f6;
+            --surface-bg: #171717;
+            --surface-border: #262626;
+            --card-bg: #171717;
+            --muted-text: #9ca3af;
+        }
+
+        body { 
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
         
         /* Minimalist Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-thumb { background: var(--surface-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--muted-text); }
 
         /* Progress bar shimmer */
         @keyframes shimmer {
@@ -55,58 +88,58 @@
     </style>
 </head>
 
-<body class="font-sans text-slate-800 antialiased min-h-screen">
+<body class="font-sans antialiased min-h-screen bg-background text-foreground">
 
     <div class="flex min-h-screen">
 
         <!-- SIDEBAR -->
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-30">
+        <aside class="w-64 bg-surface border-r border-border flex flex-col fixed h-full z-30 transition-colors duration-300">
             <!-- Brand -->
-            <div class="px-8 py-8 border-b border-slate-100">
+            <div class="px-8 py-8 border-b border-border">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-lg">N</div>
+                    <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white font-bold text-lg">N</div>
                     <div>
-                        <h1 class="text-base font-semibold tracking-tight text-slate-900">NeuroAdapt</h1>
-                        <p class="text-xs text-slate-500 tracking-wider uppercase">Learning</p>
+                        <h1 class="text-base font-semibold tracking-tight">NeuroAdapt</h1>
+                        <p class="text-xs text-muted tracking-wider uppercase">Learning</p>
                     </div>
                 </div>
             </div>
 
             <!-- Navigation -->
             <nav class="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
-                <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-slate-400">Main</p>
+                <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-muted">Main</p>
 
-                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:text-foreground hover:bg-border/50 font-medium text-sm transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
                     Dashboard
                 </a>
 
-                <a href="courses.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-100 text-slate-900 font-medium text-sm transition-all">
-                    <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+                <a href="courses.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-accent/10 text-accent font-medium text-sm transition-all">
+                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
                     My Courses
                 </a>
 
-                <a href="reading.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
+                <a href="reading.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:text-foreground hover:bg-border/50 font-medium text-sm transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a3.375 3.375 0 01-4.06.52L12 17.25l-.47.24a3.375 3.375 0 01-4.06-.52L5 14.5m14 0V19a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 19v-4.5"/></svg>
                     Neuro Module
                 </a>
 
-                <div class="my-6 border-t border-slate-100"></div>
-                <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-slate-400">System</p>
+                <div class="my-6 border-t border-border"></div>
+                <p class="px-4 mb-4 text-xs font-semibold tracking-widest uppercase text-muted">System</p>
 
-                <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm transition-all">
+                <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:text-foreground hover:bg-border/50 font-medium text-sm transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
                     Induction
                 </a>
             </nav>
 
             <!-- User -->
-            <div class="p-6 border-t border-slate-100 bg-slate-50/50">
+            <div class="p-6 border-t border-border bg-border/20">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700">SL</div>
+                    <div class="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-sm font-bold text-accent">SL</div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-slate-900 truncate">S. Lojan</p>
-                        <p class="text-xs text-slate-500">Student</p>
+                        <p class="text-sm font-medium truncate">S. Lojan</p>
+                        <p class="text-xs text-muted">Student</p>
                     </div>
                     <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-dot" title="Online"></div>
                 </div>
@@ -119,62 +152,62 @@
             <!-- Header -->
             <header class="mb-12 flex items-end justify-between">
                 <div>
-                    <p class="text-base text-slate-500 mb-2">Your learning path</p>
-                    <h2 class="text-4xl font-sans font-bold text-slate-900 tracking-tight">My Courses</h2>
+                    <p class="text-base text-muted mb-2">Your learning path</p>
+                    <h2 class="text-4xl font-sans font-bold tracking-tight">My Courses</h2>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span class="px-4 py-2 text-xs font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200">4 modules assigned</span>
-                    <span class="px-4 py-2 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">1 completed</span>
+                    <span class="px-4 py-2 text-xs font-semibold rounded-full bg-border text-muted border border-border">4 modules assigned</span>
+                    <span class="px-4 py-2 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">1 completed</span>
                 </div>
             </header>
 
             <!-- Overall Progress Bar -->
-            <div class="bg-white rounded-2xl p-8 mb-10 shadow-sm border border-slate-200">
+            <div class="bg-card rounded-2xl p-8 mb-10 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-4">
-                    <p class="text-sm font-semibold text-slate-800">Overall Induction Progress</p>
-                    <p class="text-sm font-bold text-blue-600">25%</p>
+                    <p class="text-sm font-semibold">Overall Induction Progress</p>
+                    <p class="text-sm font-bold text-accent">25%</p>
                 </div>
-                <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full bg-blue-500 progress-shimmer transition-all duration-1000 ease-out" style="width: 25%"></div>
+                <div class="w-full h-3 bg-border rounded-full overflow-hidden">
+                    <div class="h-full rounded-full bg-accent progress-shimmer transition-all duration-1000 ease-out" style="width: 25%"></div>
                 </div>
-                <p class="text-xs text-slate-500 mt-3 font-medium">Complete all 4 modules to finish your institutional induction.</p>
+                <p class="text-xs text-muted mt-3 font-medium">Complete all 4 modules to finish your institutional induction.</p>
             </div>
 
             <!-- Course Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                 <!-- Course 1: Institutional Regulations (ACTIVE) -->
-                <div id="course-regulations" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border-2 border-blue-500">
-                    <div class="h-32 bg-slate-50 relative overflow-hidden border-b border-slate-100 flex items-center px-8">
+                <div id="course-regulations" class="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border-2 border-accent">
+                    <div class="h-32 bg-border/30 relative overflow-hidden border-b border-border flex items-center px-8">
                         <div class="absolute top-5 left-5">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-blue-600 text-white uppercase tracking-wider">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-accent text-white uppercase tracking-wider">
                                 <span class="w-1.5 h-1.5 rounded-full bg-white pulse-dot"></span>
                                 In Progress
                             </span>
                         </div>
                         <div class="absolute bottom-5 right-5">
-                            <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm">
-                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg>
+                            <div class="w-12 h-12 rounded-xl bg-card flex items-center justify-center border border-border shadow-sm">
+                                <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg>
                             </div>
                         </div>
                     </div>
 
                     <div class="p-8">
-                        <h3 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">Institutional Regulations</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed mb-6">Normas y reglamentos institucionales que todo estudiante debe conocer antes de iniciar actividades académicas.</p>
+                        <h3 class="text-xl font-bold mb-2 group-hover:text-accent transition-colors">Institutional Regulations</h3>
+                        <p class="text-sm text-muted leading-relaxed mb-6">Normas y reglamentos institucionales que todo estudiante debe conocer antes de iniciar actividades académicas.</p>
 
                         <div class="mb-6">
                             <div class="flex justify-between text-xs mb-2">
-                                <span class="text-slate-500 font-medium">Progress</span>
-                                <span class="text-blue-600 font-bold">60%</span>
+                                <span class="text-muted font-medium">Progress</span>
+                                <span class="text-accent font-bold">60%</span>
                             </div>
-                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full bg-blue-500 progress-shimmer transition-all duration-700" style="width: 60%"></div>
+                            <div class="w-full h-2 bg-border rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-accent progress-shimmer transition-all duration-700" style="width: 60%"></div>
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4 text-xs text-slate-500 font-medium">
+                            <div class="flex items-center gap-4 text-xs text-muted font-medium">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     25 min left
@@ -184,7 +217,7 @@
                                     5 sections
                                 </span>
                             </div>
-                            <a href="reading.html" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-sm">
+                            <a href="reading.html" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-accent hover:bg-blue-600 rounded-xl transition-all shadow-sm">
                                 Continue
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                             </a>
@@ -193,36 +226,36 @@
                 </div>
 
                 <!-- Course 2: Library Usage (NOT STARTED) -->
-                <div id="course-library" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border border-slate-200">
-                    <div class="h-32 bg-slate-50 relative overflow-hidden border-b border-slate-100 flex items-center px-8">
+                <div id="course-library" class="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border border-border">
+                    <div class="h-32 bg-border/30 relative overflow-hidden border-b border-border flex items-center px-8">
                         <div class="absolute top-5 left-5">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-slate-200 text-slate-600 uppercase tracking-wider">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-border text-muted uppercase tracking-wider">
                                 Not started
                             </span>
                         </div>
                         <div class="absolute bottom-5 right-5">
-                            <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm">
-                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
+                            <div class="w-12 h-12 rounded-xl bg-card flex items-center justify-center border border-border shadow-sm">
+                                <svg class="w-6 h-6 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
                             </div>
                         </div>
                     </div>
 
                     <div class="p-8">
-                        <h3 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">Library Usage</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed mb-6">Guía de uso de los servicios de la biblioteca, sistema de préstamos, bases de datos y recursos digitales disponibles.</p>
+                        <h3 class="text-xl font-bold mb-2 group-hover:text-accent transition-colors">Library Usage</h3>
+                        <p class="text-sm text-muted leading-relaxed mb-6">Guía de uso de los servicios de la biblioteca, sistema de préstamos, bases de datos y recursos digitales disponibles.</p>
 
                         <div class="mb-6">
                             <div class="flex justify-between text-xs mb-2">
-                                <span class="text-slate-500 font-medium">Progress</span>
-                                <span class="text-slate-500 font-bold">0%</span>
+                                <span class="text-muted font-medium">Progress</span>
+                                <span class="text-muted font-bold">0%</span>
                             </div>
-                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full bg-slate-200" style="width: 0%"></div>
+                            <div class="w-full h-2 bg-border rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-muted" style="width: 0%"></div>
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4 text-xs text-slate-400 font-medium">
+                            <div class="flex items-center gap-4 text-xs text-muted font-medium">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     40 min
@@ -232,7 +265,7 @@
                                     8 sections
                                 </span>
                             </div>
-                            <span class="inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-500 bg-slate-100 rounded-xl border border-slate-200">
+                            <span class="inline-flex items-center px-4 py-2 text-sm font-semibold text-muted bg-border rounded-xl border border-border">
                                 Locked
                                 <svg class="w-4 h-4 ml-2 opacity-50" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
                             </span>
@@ -241,40 +274,39 @@
                 </div>
 
                 <!-- Course 3: Campus Safety (COMPLETED) -->
-                <div id="course-safety" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border border-slate-200 relative">
-                    <!-- Added a subtle completed border decoration -->
+                <div id="course-safety" class="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border border-border relative">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
 
-                    <div class="h-32 bg-slate-50 relative overflow-hidden border-b border-slate-100 flex items-center px-8">
+                    <div class="h-32 bg-border/30 relative overflow-hidden border-b border-border flex items-center px-8">
                         <div class="absolute top-5 left-5">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-wider">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-emerald-500/10 text-emerald-600 uppercase tracking-wider">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                                 Completed
                             </span>
                         </div>
                         <div class="absolute bottom-5 right-5">
-                            <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm">
+                            <div class="w-12 h-12 rounded-xl bg-card flex items-center justify-center border border-border shadow-sm">
                                 <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
                             </div>
                         </div>
                     </div>
 
                     <div class="p-8">
-                        <h3 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-emerald-600 transition-colors">Campus Safety</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed mb-6">Protocolos de seguridad, evacuación, rutas de emergencia y procedimientos ante situaciones de riesgo en el campus.</p>
+                        <h3 class="text-xl font-bold mb-2 group-hover:text-emerald-600 transition-colors">Campus Safety</h3>
+                        <p class="text-sm text-muted leading-relaxed mb-6">Protocolos de seguridad, evacuación, rutas de emergencia y procedimientos ante situaciones de riesgo en el campus.</p>
 
                         <div class="mb-6">
                             <div class="flex justify-between text-xs mb-2">
-                                <span class="text-slate-500 font-medium">Progress</span>
+                                <span class="text-muted font-medium">Progress</span>
                                 <span class="text-emerald-600 font-bold">100%</span>
                             </div>
-                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="w-full h-2 bg-border rounded-full overflow-hidden">
                                 <div class="h-full rounded-full bg-emerald-500" style="width: 100%"></div>
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4 text-xs text-slate-500 font-medium">
+                            <div class="flex items-center gap-4 text-xs text-muted font-medium">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     Finished
@@ -284,7 +316,7 @@
                                     92 pts
                                 </span>
                             </div>
-                            <span class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 rounded-xl border border-emerald-200">
+                            <span class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-emerald-600 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 Done
                             </span>
@@ -293,36 +325,36 @@
                 </div>
 
                 <!-- Course 4: Ethics Code (NOT STARTED) -->
-                <div id="course-ethics" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border border-slate-200">
-                    <div class="h-32 bg-slate-50 relative overflow-hidden border-b border-slate-100 flex items-center px-8">
+                <div id="course-ethics" class="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer group border border-border">
+                    <div class="h-32 bg-border/30 relative overflow-hidden border-b border-border flex items-center px-8">
                         <div class="absolute top-5 left-5">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-slate-200 text-slate-600 uppercase tracking-wider">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold rounded-full bg-border text-muted uppercase tracking-wider">
                                 Not started
                             </span>
                         </div>
                         <div class="absolute bottom-5 right-5">
-                            <div class="w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-slate-200 shadow-sm">
-                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z"/></svg>
+                            <div class="w-12 h-12 rounded-xl bg-card flex items-center justify-center border border-border shadow-sm">
+                                <svg class="w-6 h-6 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z"/></svg>
                             </div>
                         </div>
                     </div>
 
                     <div class="p-8">
-                        <h3 class="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">Ethics Code</h3>
-                        <p class="text-sm text-slate-500 leading-relaxed mb-6">Código de ética y conducta esperada dentro de la institución. Incluye normas de integridad académica y convivencia.</p>
+                        <h3 class="text-xl font-bold mb-2 group-hover:text-accent transition-colors">Ethics Code</h3>
+                        <p class="text-sm text-muted leading-relaxed mb-6">Código de ética y conducta esperada dentro de la institución. Incluye normas de integridad académica y convivencia.</p>
 
                         <div class="mb-6">
                             <div class="flex justify-between text-xs mb-2">
-                                <span class="text-slate-500 font-medium">Progress</span>
-                                <span class="text-slate-500 font-bold">0%</span>
+                                <span class="text-muted font-medium">Progress</span>
+                                <span class="text-muted font-bold">0%</span>
                             </div>
-                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full bg-slate-200" style="width: 0%"></div>
+                            <div class="w-full h-2 bg-border rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-border" style="width: 0%"></div>
                             </div>
                         </div>
 
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4 text-xs text-slate-400 font-medium">
+                            <div class="flex items-center gap-4 text-xs text-muted font-medium">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     30 min
@@ -332,7 +364,7 @@
                                     6 sections
                                 </span>
                             </div>
-                            <span class="inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-500 bg-slate-100 rounded-xl border border-slate-200">
+                            <span class="inline-flex items-center px-4 py-2 text-sm font-semibold text-muted bg-border rounded-xl border border-border">
                                 Locked
                                 <svg class="w-4 h-4 ml-2 opacity-50" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
                             </span>

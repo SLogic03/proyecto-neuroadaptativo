@@ -1,4 +1,5 @@
 import os
+import time
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -32,6 +33,11 @@ FEATURE_COLS = [
 CALIBRATION_BATCHES = 10       # Lotes requeridos para calibrar (~10-15 s)
 MIN_STD = 0.01                 # Piso para desviación estándar (evita /0)
 Z_SCORE_THRESHOLD = 2.0      # Umbral de Z para considerar "atípico"
+LLM_COOLDOWN_SECONDS = 45    # Tiempo mínimo entre llamadas a Gemini por sesión
+
+# Umbrales para clasificar la severidad de la atipicidad
+Z_LEVEL_2_THRESHOLD = 3.5    # Z ≥ 3.5 → Nivel 2 (bloques)
+Z_LEVEL_3_THRESHOLD = 5.0    # Z ≥ 5.0 → Nivel 3 (resumen)
 
 
 # ── Estado de conexión por usuario ────────────────────────────────
@@ -44,6 +50,8 @@ class UserSessionState:
     baseline_mean: np.ndarray | None = None
     baseline_std: np.ndarray | None = None
     batch_count: int = 0
+    last_llm_call: float = 0.0              # Timestamp de la última llamada a Gemini
+    last_directives: dict | None = None     # Últimas directivas generadas (caché)
 
 
 # Diccionario global: WebSocket -> UserSessionState
@@ -169,6 +177,37 @@ def _is_atypical(z_scores: np.ndarray) -> bool:
     return z_v > Z_SCORE_THRESHOLD or z_a > Z_SCORE_THRESHOLD
 
 
+def _classify_adaptation_level(z_scores: np.ndarray) -> int:
+    """Clasifica el nivel de adaptación según la magnitud del Z-Score.
+    
+    Nivel 1: |Z| > 2.0 pero < 3.5  → Solo CSS (sin IA)
+    Nivel 2: |Z| ≥ 3.5 pero < 5.0  → Separación por bloques (Gemini)
+    Nivel 3: |Z| ≥ 5.0             → Resumen simplificado (Gemini)
+    """
+    max_z = max(
+        abs(z_scores[FEATURE_COLS.index("v")]),
+        abs(z_scores[FEATURE_COLS.index("a")])
+    )
+    if max_z >= Z_LEVEL_3_THRESHOLD:
+        return 3
+    if max_z >= Z_LEVEL_2_THRESHOLD:
+        return 2
+    return 1
+
+LEVEL_1_STATIC_DIRECTIVES = {
+    "type": "prediction",
+    "action": "adapt",
+    "adaptation_level": 1,
+    "theme": "calm",
+    "font_size": "110%",
+    "line_height": "1.8",
+    "letter_spacing": "0.02em",
+    "hide_sidebar": False,
+    "simplify_content": False,
+    "message": "Adaptación de Nivel 1 aplicada: ajustes visuales para reducir carga cognitiva.",
+}
+
+
 # ── Endpoint WebSocket ────────────────────────────────────────────
 
 @router.websocket("/ws")
@@ -251,6 +290,7 @@ async def websocket_telemetry(websocket: WebSocket):
                     "cognitive_state": "Normal",
                     "z_scores": z_dict,
                     "atypical": False,
+                    "prob_estres": 0.0
                 })
                 continue
 
@@ -265,10 +305,9 @@ async def websocket_telemetry(websocket: WebSocket):
 
             if ml_model is not None:
                 probabilidades = ml_model.predict_proba(X_input)[0]
-                prob_estres = probabilidades[1]
-                # El modelo pre-entrenado falla con valores muy extremos, 
-                # así que si el Z-Score detectó anomalía, forzamos el estado de estrés.
-                prediction = 1
+                prob_estres = float(probabilidades[1])
+                # Ya no forzamos predicción 1, confiamos en prob_estres para la histeresis
+                prediction = 1 if prob_estres > 0.5 else 0
             else:
                 prob_estres = 1.0
                 prediction = 1
@@ -278,16 +317,37 @@ async def websocket_telemetry(websocket: WebSocket):
             print(f"[WS][ML] Prob(Estrés del Modelo): {prob_estres:.2f} → "
                   f"Decisión Final: {prediction} ({cognitive_state}) basándose en Z-Score Dinámico")
 
-            # Llamar a Gemini para directivas DOM
-            directives = await get_dom_directives(
-                cognitive_state=cognitive_state,
-                features=features,
-            )
+            # ── Clasificar nivel de adaptación ────────────
+            adaptation_level = _classify_adaptation_level(z_scores)
+            print(f"[WS][ADAPT] Nivel de adaptación: {adaptation_level}")
+
+            if adaptation_level == 1:
+                # Nivel 1 → Respuesta estática, SIN llamada a Gemini
+                directives = LEVEL_1_STATIC_DIRECTIVES.copy()
+                print("[WS][ADAPT] Nivel 1: directivas estáticas (bypass Gemini)")
+            else:
+                # Nivel 2 o 3 → Requiere Gemini (con cooldown)
+                now = time.time()
+                elapsed = now - state.last_llm_call
+
+                if elapsed < LLM_COOLDOWN_SECONDS and state.last_directives is not None:
+                    print(f"[WS][COOLDOWN] Reutilizando directivas anteriores "
+                          f"({elapsed:.1f}s < {LLM_COOLDOWN_SECONDS}s)")
+                    directives = state.last_directives.copy()
+                else:
+                    directives = await get_dom_directives(
+                        cognitive_state=cognitive_state,
+                        features=features,
+                    )
+                    state.last_llm_call = now
+                    state.last_directives = directives
 
             # Inyectar metadatos de Z-score en la respuesta
             if isinstance(directives, dict):
                 directives["z_scores"] = z_dict
                 directives["atypical"] = True
+                directives["adaptation_level"] = adaptation_level
+                directives["prob_estres"] = prob_estres
 
             # Retransmitir directivas al navegador
             await websocket.send_json(directives)

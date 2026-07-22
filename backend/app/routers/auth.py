@@ -17,6 +17,7 @@ from app.core.security import (
     create_access_token,
     decode_access_token,
     verify_password,
+    get_password_hash,
 )
 from app.db.models import User, UserRole
 from app.db.session import get_db
@@ -51,7 +52,7 @@ async def login(
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cuenta desactivada",
+            detail="Tu cuenta está pendiente de aprobación por el administrador.",
         )
 
     token = create_access_token(data={
@@ -126,3 +127,46 @@ async def get_current_admin(
             detail="Se requiere rol de administrador",
         )
     return current_user
+
+from pydantic import BaseModel
+
+class RegisterRequest(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    student_id: str
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register(body: RegisterRequest, db: Session = Depends(get_db)):
+    """Registro público de un nuevo estudiante.
+    
+    La cuenta se crea con is_active=False y queda pendiente
+    de aprobación por un administrador.
+    """
+    if db.query(User).filter(User.email == body.email).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El correo electrónico ya está registrado.",
+        )
+    
+    if db.query(User).filter(User.student_id == body.student_id).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El ID de estudiante ya está registrado.",
+        )
+    
+    new_user = User(
+        full_name=body.full_name,
+        email=body.email,
+        hashed_password=get_password_hash(body.password),
+        role=UserRole.student,
+        is_active=False,
+        student_id=body.student_id,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    print(f"[AUTH] Registro pendiente: {new_user.email} (student_id={new_user.student_id})")
+
+    return {"message": "Registro exitoso. Tu cuenta será revisada por un administrador."}

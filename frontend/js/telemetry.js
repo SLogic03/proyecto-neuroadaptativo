@@ -14,6 +14,10 @@ ws.onclose = (e) => console.error(`WebSocket cerrado: code=${e.code} reason=${e.
 let telemetryBuffer = [];
 let currentAdaptationLevel = 0;
 
+// ID de curso actual extraído de la URL para trazabilidad
+const urlCourseId = new URLSearchParams(window.location.search).get('courseId');
+const currentCourseId = urlCourseId ? parseInt(urlCourseId) : null;
+
 // Variables de estado para calcular deltas (diferencias)
 // Usamos performance.now() para alta resolución temporal (µs precision)
 let lastX = null, lastY = null, lastTimeMouse = null;
@@ -27,10 +31,26 @@ let accumulatedDistance = 0;
 
 // Constantes de filtrado
 const DEADZONE_PX = 2;    // Distancia mínima para ignorar jitter del hardware
-const MIN_DT_MS = 8;      // Delta time mínimo para calcular derivadas (evita picos)
+
+// Buffer para promedio móvil
+let recentKinematics = [];
+
+// Función utilitaria de Throttling
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    }
+}
 
 // 1. Cinemática del Ratón (Velocidad, Aceleración y Jerk)
-document.addEventListener('mousemove', (event) => {
+document.addEventListener('mousemove', throttle((event) => {
     const currentTime = performance.now(); // Alta resolución temporal (sub-ms)
     let velocity = 0;
     let acceleration = 0;
@@ -49,22 +69,8 @@ document.addEventListener('mousemove', (event) => {
 
         const deltaTime = currentTime - lastTimeMouse;
 
-        // PROTECCIÓN CONTRA PICOS: si dt < 8ms, acumulamos distancia
-        // pero NO calculamos nuevas derivadas (evita v → ∞)
-        if (deltaTime < MIN_DT_MS) {
-            accumulatedDistance += distance;
-            // Actualizamos posición pero NO el timestamp ni la velocidad
-            lastX = event.clientX;
-            lastY = event.clientY;
-            return;
-        }
-
-        // Incluimos cualquier distancia acumulada durante el throttling
-        const totalDistance = accumulatedDistance + distance;
-        accumulatedDistance = 0; // Reset del acumulador
-
         // Derivadas cinemáticas con dt real
-        velocity = totalDistance / deltaTime; // px/ms
+        velocity = distance / deltaTime; // px/ms
         acceleration = (velocity - lastVelocity) / deltaTime; // px/ms²
         jerk = (acceleration - lastAcceleration) / deltaTime; // px/ms³
 
@@ -72,19 +78,35 @@ document.addEventListener('mousemove', (event) => {
         if (!isFinite(velocity))     velocity = 0;
         if (!isFinite(acceleration)) acceleration = 0;
         if (!isFinite(jerk))         jerk = 0;
+        
+        // BUFFER PARA MOVING AVERAGE (últimas 5 lecturas)
+        recentKinematics.push({v: velocity, a: acceleration, jerk: jerk});
+        if (recentKinematics.length > 5) recentKinematics.shift();
+        
+        // Cálculo del promedio móvil
+        const sum = recentKinematics.reduce((acc, curr) => ({
+            v: acc.v + curr.v,
+            a: acc.a + curr.a,
+            jerk: acc.jerk + curr.jerk
+        }), {v: 0, a: 0, jerk: 0});
+        
+        const avg_v = sum.v / recentKinematics.length;
+        const avg_a = sum.a / recentKinematics.length;
+        const avg_jerk = sum.jerk / recentKinematics.length;
+
+        const mouseData = {
+            type: 'mouse_kinematics',
+            course_id: currentCourseId,
+            x: event.clientX,
+            y: event.clientY,
+            v: parseFloat(avg_v.toFixed(4)), // Redondeamos para no saturar la BD
+            a: parseFloat(avg_a.toFixed(6)),
+            jerk: parseFloat(avg_jerk.toFixed(8)),
+            timestamp: currentTime
+        };
+
+        telemetryBuffer.push(mouseData);
     }
-
-    const mouseData = {
-        type: 'mouse_kinematics',
-        x: event.clientX,
-        y: event.clientY,
-        v: parseFloat(velocity.toFixed(4)), // Redondeamos para no saturar la BD
-        a: parseFloat(acceleration.toFixed(6)),
-        jerk: parseFloat(jerk.toFixed(8)),
-        timestamp: currentTime
-    };
-
-    telemetryBuffer.push(mouseData);
 
     // Actualizamos el estado para el siguiente fotograma
     lastX = event.clientX;
@@ -92,7 +114,7 @@ document.addEventListener('mousemove', (event) => {
     lastTimeMouse = currentTime;
     lastVelocity = velocity;
     lastAcceleration = acceleration;
-}, { passive: true });
+}, 500), { passive: true });
 
 // 2. Latencia de Teclado (Tiempo entre teclas)
 document.addEventListener('keydown', (event) => {
@@ -105,6 +127,7 @@ document.addEventListener('keydown', (event) => {
 
     const keyData = {
         type: 'keystroke_latency',
+        course_id: currentCourseId,
         key_code: event.code,
         latency_ms: parseFloat(latency.toFixed(2)), // Sub-ms precision
         timestamp: currentTime
@@ -135,6 +158,7 @@ document.querySelectorAll('button, input').forEach(element => {
 
             const dwellData = {
                 type: 'dwell_time',
+                course_id: currentCourseId,
                 element_id: targetId,
                 duration_ms: dwellTime,
                 timestamp: performance.now()
@@ -160,7 +184,7 @@ setInterval(() => {
         ws.send(JSON.stringify(telemetryBuffer));
         telemetryBuffer = [];
     }
-}, 500);
+}, 3000);
 
 // ==========================================
 // Recepción de directivas neuroadaptativas
@@ -170,28 +194,59 @@ setInterval(() => {
 // Flag to prevent concurrent consent modals
 let _consentPending = false;
 
+// Variables de estado para Histéresis y Cooldown
+let lastStateChange = 0;
+const COOLDOWN_MS = 10000;
+const TRIGGER_STRESS = 0.60;
+const TRIGGER_NORMAL = 0.35;
+
 ws.onmessage = (event) => {
     try {
         const directives = JSON.parse(event.data);
         console.log("Directivas neuroadaptativas recibidas:", directives);
 
-        // Block ALL adaptations during calibration
         if (window._isCalibrating) {
             console.log('[NeuroAdapt] Ignorando directivas — calibración en curso.');
             return;
         }
 
-        // If cognitive state is Normal, no action needed
-        if (directives.cognitive_state === "Normal" || directives.atypical === false) {
-            directives.action = "none";
+        // BLOQUEO SECUENCIAL EXPERIMENTAL
+        if (window.courseIsAdaptive === false) {
+            // El curso es de control, silenciamos las adaptaciones visuales
+            return;
         }
 
-        if (directives.action === 'adapt' || directives.action === 'stress_detected') {
-            // Don't show another modal if one is already pending
-            if (_consentPending) return;
-            showStressConsentModal(directives);
+        const prob = directives.prob_estres !== undefined ? directives.prob_estres : 0.0;
+        const now = Date.now();
+        
+        console.log(`[NeuroAdapt] Probabilidad de estrés evaluada: ${prob.toFixed(3)}`);
+
+        // Bloqueo de transición (Cooldown)
+        if (now - lastStateChange < COOLDOWN_MS) {
+            console.log('[NeuroAdapt] En cooldown. Ignorando umbrales temporales.');
+            return;
         }
-        // No action for 'none' — changes are permanent during session
+
+        // Recuperación (Trigger Normal)
+        if (prob < TRIGGER_NORMAL && currentAdaptationLevel > 0) {
+            console.log(`[NeuroAdapt] Recuperación (P=${prob.toFixed(2)}). Revirtiendo a estado base.`);
+            resetNeuroAdaptation();
+            showNeuroNotification('Se detectó recuperación. Volviendo a entorno normal.', 'fallback');
+            lastStateChange = now;
+            return;
+        }
+
+        // Estrés (Trigger Stress)
+        if (prob > TRIGGER_STRESS) {
+            // Aseguramos que la acción sea adapt para que progrese
+            directives.action = 'adapt';
+            if (_consentPending) return;
+            
+            console.log(`[NeuroAdapt] Estrés detectado (P=${prob.toFixed(2)}). Activando adaptación.`);
+            showStressConsentModal(directives);
+            lastStateChange = now;
+            return;
+        }
         
     } catch (err) {
         console.error("Error parseando directivas del backend:", err);
@@ -330,6 +385,11 @@ async function applyNeuroAdaptation(directives) {
                     : `http://${window.location.host}`;
 
                 try {
+                    // Obtener courseId y chapterIndex del entorno global de reading.js
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const courseId = parseInt(urlParams.get('id'), 10) || 1;
+                    const cIndex = (typeof currentChapterIndex !== 'undefined') ? currentChapterIndex : 0;
+
                     const response = await fetch(`${API_BASE}/student/simplify`, {
                         method: 'POST',
                         headers: {
@@ -338,7 +398,9 @@ async function applyNeuroAdaptation(directives) {
                         },
                         body: JSON.stringify({
                             text: originalText,
-                            level: currentAdaptationLevel
+                            level: currentAdaptationLevel,
+                            course_id: courseId,
+                            chapter_index: cIndex
                         })
                     });
 
@@ -464,13 +526,23 @@ async function triggerLLMSummary() {
         const token = localStorage.getItem('access_token');
         const API_BASE = window.location.protocol === "https:" ? `https://${window.location.host}` : `http://${window.location.host}`;
         
+        // Obtener variables globales de reading.js
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = parseInt(urlParams.get('id'), 10) || 1;
+        const cIndex = (typeof currentChapterIndex !== 'undefined') ? currentChapterIndex : 0;
+
         const response = await fetch(`${API_BASE}/student/simplify`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ text: paragraphs })
+            body: JSON.stringify({ 
+                text: paragraphs,
+                level: 3,
+                course_id: courseId,
+                chapter_index: cIndex
+            })
         });
         
         if (!response.ok) throw new Error('Fallo al obtener resumen');

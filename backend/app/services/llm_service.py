@@ -137,7 +137,26 @@ async def get_dom_directives(
         return FALLBACK_RESPONSE
 
 
-async def simplify_text(text: str, level: int = 1) -> str:
+import re
+
+def simplify_level_2_local(text: str) -> str:
+    """Divide el texto en bloques de lectura (párrafos de 2 oraciones) sin IA."""
+    if not text:
+        return ""
+    
+    # Dividir por puntos, signos de interrogación o exclamación
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    sentences = [s.strip() for s in sentences if s.strip()]
+    
+    html_blocks = []
+    # Agrupar de 2 en 2
+    for i in range(0, len(sentences), 2):
+        chunk = " ".join(sentences[i:i+2])
+        html_blocks.append(f"<p>{chunk}</p>")
+        
+    return "".join(html_blocks)
+
+async def simplify_text(text: str, level: int = 3) -> str:
     """Utiliza Gemini para generar un resumen simplificado del texto dado.
 
     Args:
@@ -147,15 +166,8 @@ async def simplify_text(text: str, level: int = 1) -> str:
     try:
         print(f"[LLM] Solicitando simplificación de texto ({len(text)} caracteres, nivel {level})...")
 
-        # ── Prompt dinámico según el nivel de adaptación ────────────
-        if level == 2:
-            prompt = (
-                "Reescribe el siguiente texto acortando los párrafos para que sean "
-                "ideas muy concisas y fáciles de leer. "
-                "Devuelve SOLO código HTML usando etiquetas <p>.\n\n"
-                f"Texto original:\n{text}"
-            )
-        elif level >= 3:
+        # ── Prompt dinámico para Nivel 3 ────────────
+        if level >= 3:
             prompt = (
                 "Transforma el siguiente texto en un resumen muy directo usando "
                 "viñetas (bullet points) para un estudiante estresado. "

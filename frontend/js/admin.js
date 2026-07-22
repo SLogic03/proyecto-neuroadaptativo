@@ -38,11 +38,13 @@ const $btnLogout     = document.getElementById("btn-logout");
 const $sectionUsers   = document.getElementById("section-users");
 const $sectionCourses = document.getElementById("section-courses");
 const $sectionEnroll  = document.getElementById("section-enroll");
+const $sectionPending = document.getElementById("section-pending");
 
 // Nav buttons
 const $navUsers   = document.getElementById("nav-users");
 const $navCourses = document.getElementById("nav-courses");
 const $navEnroll  = document.getElementById("nav-enroll");
+const $navPending = document.getElementById("nav-pending");
 
 // Forms
 const $formCreateUser   = document.getElementById("form-create-user");
@@ -173,6 +175,8 @@ function enterDashboard() {
     // Load initial data
     loadUsers();
     loadCourses();
+    loadEnrollments();
+    loadPendingUsers();
     showSection("users");
 }
 
@@ -197,6 +201,7 @@ const sections = {
     users:   { el: $sectionUsers,   nav: $navUsers,   title: "Estudiantes" },
     courses: { el: $sectionCourses, nav: $navCourses, title: "Cursos" },
     enroll:  { el: $sectionEnroll,  nav: $navEnroll,  title: "Matrículas" },
+    pending: { el: $sectionPending, nav: $navPending, title: "Solicitudes Pendientes" },
 };
 
 function showSection(name) {
@@ -213,11 +218,15 @@ function showSection(name) {
     if (name === "enroll") {
         populateEnrollDropdowns();
     }
+    if (name === "pending") {
+        loadPendingUsers();
+    }
 }
 
 $navUsers.addEventListener("click", () => showSection("users"));
 $navCourses.addEventListener("click", () => showSection("courses"));
 $navEnroll.addEventListener("click", () => showSection("enroll"));
+$navPending.addEventListener("click", () => showSection("pending"));
 
 // ── Users CRUD ───────────────────────────────────────────────────
 
@@ -401,9 +410,7 @@ $formEnroll.addEventListener("submit", async (e) => {
         const enrollment = await res.json();
         showToast(`${enrollment.user_email} matriculado en "${enrollment.course_title}"`, "success");
 
-        // Add to log
-        enrollmentLog.unshift(enrollment);
-        renderEnrollmentLog();
+        await loadEnrollments();
         $formEnroll.reset();
 
     } catch (err) {
@@ -411,28 +418,130 @@ $formEnroll.addEventListener("submit", async (e) => {
     }
 });
 
-function renderEnrollmentLog() {
-    const container = document.getElementById("enrollments-list");
+async function loadEnrollments() {
+    try {
+        const res = await apiFetch("/admin/enrollments");
+        if (!res.ok) throw new Error("Error al cargar matrículas");
+        enrollmentLog = await res.json();
+        renderEnrollmentsTable();
+    } catch (err) {
+        console.error("[ADMIN] loadEnrollments:", err);
+    }
+}
+
+function formatTime(seconds) {
+    if (!seconds) return "0 min";
+    if (seconds < 60) return `${seconds} seg`;
+    const m = Math.floor(seconds / 60);
+    const h = Math.floor(m / 60);
+    if (h > 0) return `${h}h ${m % 60}m`;
+    return `${m} min`;
+}
+
+function renderEnrollmentsTable() {
+    const tbody = document.getElementById("enrollments-table-body");
+    const countSpan = document.getElementById("enrollments-count");
+    if (!tbody) return;
+    
+    if (countSpan) countSpan.textContent = `${enrollmentLog.length} matrículas`;
 
     if (enrollmentLog.length === 0) {
-        container.innerHTML = '<p class="text-sm text-slate-400 text-center py-4">Las matrículas realizadas aparecerán aquí</p>';
+        tbody.innerHTML = `<tr><td colspan="4" class="px-8 py-8 text-center text-sm text-slate-400">No hay matrículas registradas</td></tr>`;
         return;
     }
 
-    container.innerHTML = enrollmentLog.map(e => `
-        <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-            <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-slate-900">${e.user_email}</p>
-                <p class="text-xs text-slate-500">Matriculado en <strong>${e.course_title}</strong></p>
-            </div>
-            <span class="text-xs text-slate-400">${e.enrolled_at ? new Date(e.enrolled_at).toLocaleString('es-EC') : ''}</span>
-        </div>
+    tbody.innerHTML = enrollmentLog.map(e => {
+        const progress = e.progress_percent || 0;
+        
+        return `
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-8 py-4">
+                    <p class="text-sm font-semibold text-slate-900">${e.user_email}</p>
+                    <p class="text-xs text-slate-500">Matriculado: ${e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString('es-EC') : 'N/A'}</p>
+                </td>
+                <td class="px-8 py-4 text-sm text-slate-600 font-medium">${e.course_title}</td>
+                <td class="px-8 py-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-bold text-slate-700 w-10">${progress}%</span>
+                        <div class="w-32 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-8 py-4 text-sm text-slate-600">${formatTime(e.time_spent_seconds)}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// ── Pending Users ────────────────────────────────────────────────
+
+async function loadPendingUsers() {
+    try {
+        const res = await apiFetch("/admin/pending-users");
+        if (!res.ok) throw new Error("Error al cargar pendientes");
+        const pending = await res.json();
+        renderPendingTable(pending);
+        updatePendingBadge(pending.length);
+    } catch (err) {
+        console.error("[ADMIN] loadPendingUsers:", err);
+    }
+}
+
+function updatePendingBadge(count) {
+    const badge = document.getElementById("pending-badge");
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove("hidden");
+    } else {
+        badge.classList.add("hidden");
+    }
+}
+
+function renderPendingTable(pending) {
+    const tbody = document.getElementById("pending-table-body");
+    const countSpan = document.getElementById("pending-count");
+    if (!tbody) return;
+    if (countSpan) countSpan.textContent = `${pending.length} pendientes`;
+
+    if (pending.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-8 py-8 text-center text-sm text-slate-400">
+            No hay solicitudes pendientes 🎉
+        </td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = pending.map(u => `
+        <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-8 py-4 text-sm font-medium text-slate-900">${u.full_name}</td>
+            <td class="px-8 py-4 text-sm text-slate-600">${u.email}</td>
+            <td class="px-8 py-4 text-sm text-slate-600 font-mono">${u.student_id || '—'}</td>
+            <td class="px-8 py-4 text-sm text-slate-500">${u.created_at ? new Date(u.created_at).toLocaleDateString('es-EC') : '—'}</td>
+            <td class="px-8 py-4">
+                <button onclick="approveUser(${u.id})"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all active:scale-[0.97]">
+                    ✓ Aprobar
+                </button>
+            </td>
+        </tr>
     `).join("");
+}
+
+async function approveUser(userId) {
+    try {
+        const res = await apiFetch(`/admin/users/${userId}/approve`, { method: "POST" });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Error al aprobar");
+        }
+        const result = await res.json();
+        showToast(result.message, "success");
+        await loadPendingUsers();  // Refrescar tabla de pendientes
+        await loadUsers();         // Refrescar tabla de usuarios activos
+    } catch (err) {
+        showToast(err.message, "error");
+    }
 }
 
 // ── Init ─────────────────────────────────────────────────────────

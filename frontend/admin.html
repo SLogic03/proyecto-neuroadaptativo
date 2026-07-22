@@ -162,6 +162,15 @@
                             </svg>
                             Matrículas
                         </button>
+                        
+                        <button id="nav-pending"
+                            class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 font-medium text-sm transition-all text-left">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Pendientes
+                            <span id="pending-badge" class="ml-auto bg-amber-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                        </button>
 
                         <div class="my-6 border-t border-slate-800"></div>
                         <p class="px-4 mb-3 text-xs font-semibold tracking-widest uppercase text-slate-500">Platform</p>
@@ -334,13 +343,54 @@
                         </form>
                     </div>
 
-                    <!-- Recent Enrollments -->
+                    <!-- Enrollments Table -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="px-8 py-6 border-b border-slate-100">
-                            <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">Matrículas Recientes</p>
+                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                            <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">Progreso de Estudiantes</p>
+                            <span id="enrollments-count" class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">0 matrículas</span>
                         </div>
-                        <div id="enrollments-list" class="p-8 space-y-3">
-                            <p class="text-sm text-slate-400 text-center py-4">Las matrículas realizadas aparecerán aquí</p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-slate-50 text-left">
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Estudiante</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Curso</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Progreso</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Tiempo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="enrollments-table-body" class="divide-y divide-slate-100">
+                                    <!-- JS fills this -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============================================= -->
+                <!-- SECTION: Pending                               -->
+                <!-- ============================================= -->
+                <section id="section-pending" class="space-y-8 fade-in hidden">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                            <p class="text-xs font-semibold tracking-widest uppercase text-slate-400">Solicitudes Pendientes</p>
+                            <span id="pending-count" class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">0 pendientes</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-slate-50 text-left">
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Nombre</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Correo</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">ID Estudiante</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Fecha</th>
+                                        <th class="px-8 py-4 text-xs font-semibold tracking-wider uppercase text-slate-500">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pending-table-body" class="divide-y divide-slate-100">
+                                    <!-- JS fills this -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>

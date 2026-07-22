@@ -12,6 +12,7 @@ class TelemetryEvent(BaseModel):
     """
     type: str
     timestamp: int
+    course_id: Optional[int] = None
 
     # ── Campos opcionales por tipo de evento ──
     # mouse_kinematics

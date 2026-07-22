@@ -6,6 +6,54 @@ const API_BASE = "";
 
 let courseChapters = [];
 let currentChapterIndex = 0;
+let completedQuizzes = new Set();
+let activeTimeSeconds = 0;
+let _timeInterval = null;
+let _lastSaveTime = -1;
+
+function startActiveTimer() {
+    if (_timeInterval) clearInterval(_timeInterval);
+    _timeInterval = setInterval(() => { activeTimeSeconds++; }, 1000);
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        if (_timeInterval) clearInterval(_timeInterval);
+        _timeInterval = null;
+        saveProgress(); // Auto-save cuando cambia de pestaña
+    } else {
+        startActiveTimer();
+    }
+});
+
+// Auto-save periódico cada 30 segundos
+setInterval(() => { if (activeTimeSeconds > 0) saveProgress(); }, 30000);
+window.addEventListener("beforeunload", saveProgress);
+
+async function saveProgress() {
+    const courseId = new URLSearchParams(window.location.search).get('courseId');
+    if (!courseId) return;
+    if (activeTimeSeconds === 0 && _lastSaveTime === currentChapterIndex) return;
+    
+    try {
+        await fetch(`${API_BASE}/student/courses/${courseId}/progress`, {
+            method: "PATCH",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                current_chapter_index: currentChapterIndex,
+                completed_quizzes: Array.from(completedQuizzes),
+                time_spent_seconds: activeTimeSeconds
+            })
+        });
+        activeTimeSeconds = 0; // Reset delta
+        _lastSaveTime = currentChapterIndex;
+    } catch (e) {
+        console.error("[Reading] Error guardando progreso:", e);
+    }
+}
 
 // ── 1. Verificación de Autenticación ─────────────────────────────
 const accessToken = localStorage.getItem("neuroadapt_token");
@@ -87,6 +135,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if ($btnPrev) {
         $btnPrev.addEventListener("click", () => {
             if (currentChapterIndex > 0) {
+                saveProgress();
                 currentChapterIndex--;
                 if (window.resetNeuroAdaptation) window.resetNeuroAdaptation();
                 renderChapter(currentChapterIndex);
@@ -98,6 +147,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if ($btnNext) {
         $btnNext.addEventListener("click", () => {
             if (currentChapterIndex < courseChapters.length - 1) {
+                saveProgress();
                 currentChapterIndex++;
                 if (window.resetNeuroAdaptation) window.resetNeuroAdaptation();
                 renderChapter(currentChapterIndex);
@@ -176,6 +226,9 @@ async function loadSidebarCourses(currentCourseId) {
 // ── 4. Renderizar contenido ──────────────────────────────────────
 function renderCourse(course) {
     const $title = document.getElementById("course-title");
+    
+    // Inyectar bandera para la telemetría
+    window.courseIsAdaptive = course.is_adaptive;
 
     if ($title) {
         $title.textContent = course.title;
@@ -194,8 +247,10 @@ function renderCourse(course) {
         
         if (Array.isArray(data)) {
             courseChapters = data;
-            currentChapterIndex = 0;
-            renderChapter(0);
+            currentChapterIndex = course.current_chapter_index || 0;
+            completedQuizzes = new Set(course.completed_quizzes || []);
+            renderChapter(currentChapterIndex);
+            startActiveTimer();
         } else {
             const $content = document.getElementById("reading-content");
             if ($content) $content.innerHTML = `<p>${String(data)}</p>`;
@@ -213,6 +268,22 @@ function renderChapter(index) {
     const $btnNext = document.getElementById("btn-next");
 
     if (!$content || !$quizContainer) return;
+
+    // Pagination buttons initial logic
+    if ($btnPrev) {
+        if (index > 0) $btnPrev.classList.remove('hidden');
+        else $btnPrev.classList.add('hidden');
+    }
+
+    if ($btnNext) {
+        // Siempre reiniciar texto y ocultar hasta resolver quiz
+        $btnNext.innerText = 'Siguiente Hoja';
+        $btnNext.onclick = null; // Limpiar override de "Finalizar Curso"
+        $btnNext.classList.add('hidden');
+        if (!chapter.quiz && index < courseChapters.length - 1) {
+            $btnNext.classList.remove('hidden');
+        }
+    }
 
     // Render content
     let htmlContent = `
@@ -264,25 +335,49 @@ function renderChapter(index) {
         $quizContainer.querySelectorAll('.quiz-option').forEach(btn => {
             btn.addEventListener('click', handleQuizAnswer);
         });
+
+        if (completedQuizzes.has(index)) {
+            const correctIndex = q.correctIndex;
+            const $optionsContainer = document.getElementById(`${quizId}-options`);
+            const $feedback = document.getElementById(`${quizId}-feedback`);
+            
+            $optionsContainer.querySelectorAll('.quiz-option').forEach(b => {
+                b.disabled = true;
+                const idx = parseInt(b.dataset.optionIndex);
+                if (idx === correctIndex) {
+                    b.classList.remove('border-slate-200', 'bg-white', 'opacity-60');
+                    b.classList.add('border-emerald-400', 'bg-emerald-50', 'opacity-100');
+                    b.querySelector('.w-6').classList.remove('border-slate-300', 'text-slate-500');
+                    b.querySelector('.w-6').classList.add('border-emerald-500', 'text-emerald-700', 'bg-emerald-100');
+                } else {
+                    b.classList.remove('hover:border-blue-400', 'hover:bg-blue-50');
+                    b.classList.add('cursor-not-allowed', 'opacity-60');
+                }
+            });
+
+            $feedback.classList.remove('hidden');
+            $feedback.innerHTML = `
+                <div class="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 border border-emerald-200">
+                    <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-sm font-semibold text-emerald-800">✅ Ya respondiste correctamente.</p>
+                </div>
+            `;
+            
+            if ($btnNext) {
+                if (currentChapterIndex < courseChapters.length - 1) {
+                    $btnNext.classList.remove('hidden');
+                } else {
+                    $btnNext.classList.remove('hidden');
+                    $btnNext.innerText = 'Finalizar Curso';
+                    $btnNext.onclick = () => { window.location.href = 'dashboard.html'; };
+                }
+            }
+        }
     } else {
         $quizContainer.classList.add('hidden');
         $quizContainer.innerHTML = '';
-    }
-
-    // Pagination buttons logic
-    if ($btnPrev) {
-        if (index > 0) $btnPrev.classList.remove('hidden');
-        else $btnPrev.classList.add('hidden');
-    }
-
-    if ($btnNext) {
-        // Siempre reiniciar texto y ocultar hasta resolver quiz
-        $btnNext.innerText = 'Siguiente Hoja';
-        $btnNext.onclick = null; // Limpiar override de "Finalizar Curso"
-        $btnNext.classList.add('hidden');
-        if (!chapter.quiz && index < courseChapters.length - 1) {
-            $btnNext.classList.remove('hidden');
-        }
     }
 }
 
@@ -332,7 +427,9 @@ function handleQuizAnswer(e) {
                 <p class="text-sm font-semibold text-emerald-800">¡Correcto! Has comprendido esta sección.</p>
             </div>
         `;
-        // Desbloquear botón siguiente
+        // Guardar progreso y desbloquear botón siguiente
+        completedQuizzes.add(currentChapterIndex);
+        saveProgress();
         const $btnNext = document.getElementById("btn-next");
         if ($btnNext) {
             if (currentChapterIndex < courseChapters.length - 1) {

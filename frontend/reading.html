@@ -12,6 +12,15 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    colors: {
+                        background: 'var(--bg-color)',
+                        foreground: 'var(--text-color)',
+                        surface: 'var(--surface-bg)',
+                        card: 'var(--card-bg)',
+                        border: 'var(--surface-border)',
+                        muted: 'var(--muted-text)',
+                        accent: '#3b82f6'
+                    },
                     fontFamily: {
                         'sans': ['Inter', 'system-ui', 'sans-serif'],
                         'serif': ['"Source Serif 4"', 'Georgia', 'serif'],
@@ -29,44 +38,45 @@
     <style>
         /* ── LIGHT MODE (default) ──────────────────────────────── */
         :root, [data-theme="light"] {
+            --bg-color: #fcfcfc;
+            --text-color: #111827;
+            --surface-bg: #ffffff;
+            --surface-border: #e5e7eb;
+            --card-bg: #ffffff;
+            --muted-text: #6b7280;
+
+            /* Neuro-adaptation overrides */
             --dyn-font-size: 1.125rem;
             --dyn-line-height: 1.75;
             --dyn-letter-spacing: normal;
-            --dyn-bg-color: #f8fafc;
-            --dyn-text-color: #1e293b;
-            --surface-bg: #ffffff;
-            --surface-border: #e2e8f0;
-            --header-bg: #0f172a;
-            --sidebar-bg: #0f172a;
-            --sidebar-border: #1e293b;
-            --card-bg: #ffffff;
-            --muted-text: #64748b;
-            --quiz-bg: #f8fafc;
+            --dyn-bg-color: #fcfcfc;
+            --dyn-text-color: #111827;
         }
 
         /* ── DARK MODE ─────────────────────────────────────────── */
         [data-theme="dark"] {
-            --dyn-bg-color: #0f172a;
-            --dyn-text-color: #e2e8f0;
-            --surface-bg: #1e293b;
-            --surface-border: #334155;
-            --header-bg: #020617;
-            --sidebar-bg: #020617;
-            --sidebar-border: #1e293b;
-            --card-bg: #1e293b;
-            --muted-text: #94a3b8;
-            --quiz-bg: #1e293b;
+            --bg-color: #0a0a0a;
+            --text-color: #f3f4f6;
+            --surface-bg: #171717;
+            --surface-border: #262626;
+            --card-bg: #171717;
+            --muted-text: #9ca3af;
+
+            /* Neuro-adaptation overrides */
+            --dyn-bg-color: #0a0a0a;
+            --dyn-text-color: #f3f4f6;
         }
 
-        /* Dark mode stress adaptation overrides */
+        /* Dark mode stress adaptation overrides (Nivel 1) */
         [data-theme="dark"][data-stress-level="1"] {
-            --dyn-bg-color: #1a1a2e;
-            --dyn-text-color: #d1d5db;
+            --dyn-bg-color: #14141c; /* Soft warm dark */
+            --dyn-text-color: #f9fafb;
         }
+        /* Nivel 2 y 3 */
         [data-theme="dark"][data-stress-level="2"],
         [data-theme="dark"][data-stress-level="3"] {
-            --dyn-bg-color: #1a1a2e;
-            --dyn-text-color: #e5e7eb;
+            --dyn-bg-color: #14141c;
+            --dyn-text-color: #ffffff;
         }
 
         body { 
@@ -79,9 +89,8 @@
         /* Minimalist Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #475569; }
+        ::-webkit-scrollbar-thumb { background: var(--surface-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--muted-text); }
 
         .pulse-dot {
             animation: pulse-dot 2s ease-in-out infinite;
@@ -94,7 +103,7 @@
         #reading-focus-guide {
             position: absolute; left: -2rem; right: -2rem; height: 3em;
             background: rgba(59, 130, 246, 0.05);
-            border-left: 4px solid #3b82f6;
+            border-left: 4px solid var(--accent);
             pointer-events: none; transition: top 0.2s ease-out; z-index: 10;
         }
 
@@ -109,44 +118,37 @@
         }
         #reading-content p { margin-bottom: 1.5em; }
 
-        /* Dark mode overrides for key elements */
-        [data-theme="dark"] #reading-content { background-color: var(--card-bg); border-color: var(--surface-border); }
-        [data-theme="dark"] .bg-slate-50, [data-theme="dark"] #quiz-container { background-color: var(--quiz-bg) !important; border-color: var(--surface-border) !important; }
-        [data-theme="dark"] .text-slate-800, [data-theme="dark"] .text-slate-900, [data-theme="dark"] .text-slate-700 { color: var(--dyn-text-color) !important; }
-        [data-theme="dark"] .bg-white { background-color: var(--card-bg) !important; }
-        [data-theme="dark"] .border-slate-200 { border-color: var(--surface-border) !important; }
-        [data-theme="dark"] header.fixed { background-color: var(--header-bg) !important; }
-        [data-theme="dark"] #sidebar { background-color: var(--sidebar-bg) !important; }
-        [data-theme="dark"] .prose h2 { color: #f1f5f9 !important; }
+        /* The prose classes need to adapt to dark mode too, by removing fixed tailwind colors in HTML */
+        .prose h2, .prose h3 { color: inherit !important; }
 
         #sidebar { transition: transform 0.4s ease-in-out; }
     </style>
 </head>
 
-<body class="font-sans text-slate-800 antialiased min-h-screen bg-slate-50 flex flex-col">
+<body class="font-sans antialiased min-h-screen bg-background text-foreground flex flex-col transition-colors duration-300">
 
     <!-- STRESS CONSENT MODAL -->
     <div id="stress-consent-modal" class="hidden fixed inset-0 z-[9998] flex items-center justify-center">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
-        <div class="stress-consent-card relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all duration-300" style="transform: scale(1); opacity: 1;">
+        <div class="absolute inset-0 bg-background/60 backdrop-blur-sm"></div>
+        <div class="stress-consent-card relative w-full max-w-md mx-4 bg-card rounded-2xl shadow-sm border border-border overflow-hidden transition-all duration-300" style="transform: scale(1); opacity: 1;">
             <div class="px-7 py-6">
                 <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
                         </svg>
                     </div>
                     <div>
-                        <h3 id="stress-consent-title" class="text-base font-bold text-slate-800">Se detectó estrés cognitivo</h3>
-                        <p id="stress-consent-subtitle" class="text-xs text-slate-500">El sistema puede adaptar la interfaz para reducir la carga</p>
+                        <h3 id="stress-consent-title" class="text-base font-bold">Se detectó estrés cognitivo</h3>
+                        <p id="stress-consent-subtitle" class="text-xs text-muted">El sistema puede adaptar la interfaz</p>
                     </div>
                 </div>
-                <p id="stress-consent-description" class="text-sm text-slate-600 mb-5 leading-relaxed">Se ha detectado un patrón de estrés en tu comportamiento. ¿Deseas aplicar mejoras visuales para reducir la carga cognitiva?</p>
+                <p id="stress-consent-description" class="text-sm text-muted mb-5 leading-relaxed">Se ha detectado un patrón de estrés en tu comportamiento. ¿Deseas aplicar mejoras visuales para reducir la carga cognitiva?</p>
                 <div class="flex gap-3">
-                    <button id="stress-consent-reject" class="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-all text-sm">
+                    <button id="stress-consent-reject" class="flex-1 px-4 py-2.5 bg-background border border-border hover:bg-border text-foreground font-semibold rounded-xl transition-all text-sm">
                         No, gracias
                     </button>
-                    <button id="stress-consent-accept" class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all text-sm shadow-md">
+                    <button id="stress-consent-accept" class="flex-1 px-4 py-2.5 bg-accent hover:bg-blue-600 text-white font-semibold rounded-xl transition-all text-sm">
                         Sí, adaptar interfaz
                     </button>
                 </div>
@@ -154,28 +156,28 @@
         </div>
     </div>
 
-    <!-- CALIBRATION MODAL (Full-screen overlay) -->
+    <!-- CALIBRATION MODAL -->
     <div id="calibration-modal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+        <div class="absolute inset-0 bg-background/80 backdrop-blur-sm"></div>
         <!-- Card -->
-        <div class="calibration-card relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all duration-300" style="transform: scale(1); opacity: 1;">
+        <div class="calibration-card relative w-full max-w-lg mx-4 bg-card rounded-2xl shadow-sm border border-border overflow-hidden transition-all duration-300" style="transform: scale(1); opacity: 1;">
             <!-- Header with progress -->
-            <div class="bg-slate-50 border-b border-slate-100 px-8 py-5">
+            <div class="bg-surface border-b border-border px-8 py-5">
                 <div class="flex items-center gap-3 mb-3">
-                    <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-accent flex items-center justify-center">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a3.375 3.375 0 01-4.06.52L12 17.25l-.47.24a3.375 3.375 0 01-4.06-.52L5 14.5m14 0V19a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 19v-4.5"/>
                         </svg>
                     </div>
                     <div>
-                        <h3 id="calibration-title" class="text-lg font-bold text-slate-800">Calibración de Estrés</h3>
-                        <p id="calibration-subtitle" class="text-xs text-slate-500">Establece tu perfil conductual base</p>
+                        <h3 id="calibration-title" class="text-lg font-bold">Calibración de Estrés</h3>
+                        <p id="calibration-subtitle" class="text-xs text-muted">Establece tu perfil conductual base</p>
                     </div>
                 </div>
                 <!-- Progress bar -->
-                <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div id="calibration-progress" class="h-full bg-blue-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div class="w-full h-1.5 bg-border rounded-full overflow-hidden">
+                    <div id="calibration-progress" class="h-full bg-accent rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
             <!-- Body -->
@@ -186,23 +188,23 @@
     </div>
 
     <!-- TOP HEADER -->
-    <header class="fixed top-0 w-full h-16 bg-slate-900 border-b border-slate-800 z-50 flex items-center justify-between px-6 shadow-md">
+    <header class="fixed top-0 w-full h-16 bg-surface border-b border-border z-50 flex items-center justify-between px-6 shadow-sm transition-colors duration-300">
         <!-- Brand -->
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-sm">N</div>
-            <h1 class="text-lg font-semibold tracking-tight text-white hidden sm:block">NeuroAdapt</h1>
+            <div class="w-8 h-8 rounded bg-accent flex items-center justify-center text-white font-bold text-sm">N</div>
+            <h1 class="text-lg font-semibold tracking-tight hidden sm:block">NeuroAdapt</h1>
         </div>
         
         <!-- User -->
         <div class="flex items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white" id="user-avatar">--</div>
+                <div class="w-8 h-8 rounded-full bg-border flex items-center justify-center text-xs font-bold text-foreground" id="user-avatar">--</div>
                 <div class="text-right hidden sm:block">
-                    <p class="text-sm font-medium text-white leading-tight" id="user-name">Loading...</p>
-                    <p class="text-xs text-slate-400 leading-tight" id="user-role">Student</p>
+                    <p class="text-sm font-medium leading-tight" id="user-name">Loading...</p>
+                    <p class="text-xs text-muted leading-tight" id="user-role">Student</p>
                 </div>
             </div>
-            <button id="btn-logout" title="Cerrar sesión" class="text-slate-400 hover:text-white transition-colors ml-2">
+            <button id="btn-logout" title="Cerrar sesión" class="text-muted hover:text-foreground transition-colors ml-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                 </svg>
@@ -213,17 +215,17 @@
     <div class="flex flex-1 pt-16 relative">
 
         <!-- SIDEBAR -->
-        <aside id="sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col fixed h-[calc(100vh-4rem)] z-40 transform translate-x-0 transition-transform duration-400 hidden md:flex">
+        <aside id="sidebar" class="w-64 bg-surface border-r border-border flex flex-col fixed h-[calc(100vh-4rem)] z-40 transform translate-x-0 transition-all duration-400 hidden md:flex">
             <!-- Navigation -->
             <nav id="sidebar-courses" class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-                <p class="px-4 mb-3 text-xs font-semibold tracking-widest uppercase text-slate-500">Main</p>
+                <p class="px-4 mb-3 text-xs font-semibold tracking-widest uppercase text-muted">Main</p>
 
-                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 font-medium text-sm transition-all">
+                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-muted hover:text-foreground hover:bg-border/50 font-medium text-sm transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
                     Dashboard
                 </a>
 
-                <p class="px-4 mt-6 mb-3 text-xs font-semibold tracking-widest uppercase text-slate-500">Mis Cursos</p>
+                <p class="px-4 mt-6 mb-3 text-xs font-semibold tracking-widest uppercase text-muted">Mis Cursos</p>
                 <!-- Dynamic courses will be injected here -->
             </nav>
         </aside>
@@ -234,42 +236,42 @@
             <!-- Breadcrumb & Header -->
             <header class="mb-6 w-full max-w-4xl mx-auto">
                 <div class="flex items-center gap-2 mb-3">
-                    <a href="courses.html" class="text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium">My Courses</a>
-                    <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
-                    <span class="text-sm font-medium text-blue-600">Institutional Regulations</span>
+                    <a href="courses.html" class="text-muted hover:text-accent transition-colors text-sm font-medium">My Courses</a>
+                    <svg class="w-4 h-4 text-border" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+                    <span class="text-sm font-medium text-accent">Institutional Regulations</span>
                 </div>
-                <h2 id="course-title" class="text-4xl font-serif font-bold text-slate-900 tracking-tight leading-snug">
+                <h2 id="course-title" class="text-4xl font-serif font-bold tracking-tight leading-snug">
                     Cargando curso...
                 </h2>
                 
                 <!-- Neuro Status -->
-                <div class="mt-6 flex items-center justify-between border-b border-slate-200 pb-6">
-                    <div id="neuro-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 transition-all duration-300">
-                        <div class="w-2 h-2 rounded-full bg-slate-400" id="neuro-dot"></div>
-                        <span class="text-xs font-semibold text-slate-600" id="neuro-label">NeuroAdapt Pending</span>
+                <div class="mt-6 flex items-center justify-between border-b border-border pb-6">
+                    <div id="neuro-status" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-border transition-all duration-300">
+                        <div class="w-2 h-2 rounded-full bg-muted" id="neuro-dot"></div>
+                        <span class="text-xs font-semibold text-muted" id="neuro-label">NeuroAdapt Pending</span>
                     </div>
                 </div>
             </header>
 
             <!-- Text Content -->
-            <article id="reading-content" class="relative font-serif rounded-xl p-10 sm:p-16 shadow-sm border border-slate-200 bg-white w-full max-w-4xl mx-auto prose prose-slate prose-lg leading-relaxed mt-6">
+            <article id="reading-content" class="relative font-serif rounded-2xl p-10 sm:p-16 shadow-sm border border-border bg-card w-full max-w-4xl mx-auto prose prose-lg leading-relaxed mt-6">
                 <!-- Focus Guide (Hidden by default, can be toggled by LLM via telemetry.js) -->
                 <div id="reading-focus-guide" class="hidden"></div>
             </article>
 
             <!-- Quiz Container -->
-            <div id="quiz-container" class="mt-8 hidden p-6 bg-slate-50 border rounded-lg w-full max-w-4xl mx-auto"></div>
+            <div id="quiz-container" class="mt-8 hidden p-8 bg-surface border border-border rounded-2xl w-full max-w-4xl mx-auto"></div>
 
             <!-- Pagination Controls -->
-            <div id="pagination-controls" class="flex justify-between mt-6 border-t pt-4 w-full max-w-4xl mx-auto">
-                <button id="btn-prev" class="hidden bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition">Anterior</button>
-                <button id="btn-next" class="hidden bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">Siguiente Hoja</button>
+            <div id="pagination-controls" class="flex justify-between mt-8 w-full max-w-4xl mx-auto">
+                <button id="btn-prev" class="hidden bg-surface border border-border hover:bg-border text-foreground font-semibold py-2.5 px-5 rounded-xl transition-all">Anterior</button>
+                <button id="btn-next" class="hidden bg-accent hover:bg-blue-600 text-white font-semibold py-2.5 px-5 rounded-xl transition-all">Siguiente Hoja</button>
             </div>
 
             <!-- Agent Panel Placeholder (For simplified summary injection if needed) -->
-            <div id="agent-panel" class="mt-8 hidden p-6 rounded-2xl bg-blue-50 border border-blue-100">
-                <h4 class="text-sm font-bold text-blue-800 mb-3 uppercase tracking-wider">💡 Resumen Simplificado</h4>
-                <div id="agent-summary-content" class="text-blue-900 text-sm space-y-2">
+            <div id="agent-panel" class="mt-8 hidden p-6 rounded-2xl bg-accent/10 border border-accent/20">
+                <h4 class="text-sm font-bold text-accent mb-3 uppercase tracking-wider">💡 Resumen Simplificado</h4>
+                <div id="agent-summary-content" class="text-foreground text-sm space-y-2">
                     <!-- LLM injects summary here -->
                 </div>
             </div>
@@ -279,8 +281,8 @@
 
 
     <!-- Scripts -->
-    <script src="js/calibration.js?v=5"></script>
-    <script src="js/reading.js?v=5"></script>
-    <script src="js/telemetry.js?v=5"></script>
+    <script src="js/calibration.js?v=6"></script>
+    <script src="js/reading.js?v=6"></script>
+    <script src="js/telemetry.js?v=6"></script>
 </body>
 </html>

@@ -13,6 +13,7 @@ Endpoints:
 from pydantic import BaseModel, EmailStr
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+import json
 
 from app.db.models import Course, Enrollment, User, UserRole
 from app.db.session import get_db
@@ -58,6 +59,7 @@ async def list_users(
             "full_name": u.full_name,
             "role": u.role.value,
             "is_active": u.is_active,
+            "student_id": u.student_id,
             "created_at": u.created_at.isoformat() if u.created_at else None,
         }
         for u in users
@@ -214,4 +216,119 @@ async def enroll_user(
         "course_id": enrollment.course_id,
         "course_title": course.title,
         "enrolled_at": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+    }
+
+
+# ── GET /admin/enrollments ───────────────────────────────────────
+
+@router.get("/enrollments")
+async def list_enrollments(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    """Lista todas las matrículas con datos cruzados de progreso."""
+    enrollments = (
+        db.query(Enrollment, User, Course)
+        .join(User, Enrollment.user_id == User.id)
+        .join(Course, Enrollment.course_id == Course.id)
+        .order_by(Enrollment.id)
+        .all()
+    )
+    
+    result = []
+    for enrollment, user, course in enrollments:
+        completed = json.loads(enrollment.completed_quizzes) if enrollment.completed_quizzes else []
+        total_chapters = 0
+        if course.content_data:
+            try:
+                parsed = json.loads(course.content_data)
+                if isinstance(parsed, list):
+                    total_chapters = len(parsed)
+            except: pass
+        
+        progress = round((len(completed) / total_chapters) * 100) if total_chapters > 0 else 0
+        
+        result.append({
+            "enrollment_id": enrollment.id,
+            "user_id": user.id,
+            "user_name": user.full_name,
+            "user_email": user.email,
+            "is_active": user.is_active,
+            "course_id": course.id,
+            "course_title": course.title,
+            "current_chapter_index": enrollment.current_chapter_index,
+            "total_chapters": total_chapters,
+            "completed_quizzes": completed,
+            "time_spent_seconds": enrollment.time_spent_seconds,
+            "progress_percent": progress,
+            "enrolled_at": enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else None,
+        })
+    
+    return result
+
+
+# ── GET /admin/pending-users ──────────────────────────────────────
+
+@router.get("/pending-users")
+async def list_pending_users(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    """Lista estudiantes con is_active=False (pendientes de aprobación)."""
+    pending = (
+        db.query(User)
+        .filter(User.role == UserRole.student, User.is_active == False)
+        .order_by(User.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "full_name": u.full_name,
+            "student_id": u.student_id,
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+        }
+        for u in pending
+    ]
+
+
+# ── POST /admin/users/{user_id}/approve ──────────────────────────
+
+@router.post("/users/{user_id}/approve")
+async def approve_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_current_admin),
+):
+    """Aprueba un estudiante pendiente y lo matricula en el curso por defecto (ID 1)."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+
+    if user.is_active:
+        raise HTTPException(status_code=409, detail="El usuario ya está activo.")
+
+    # Activar usuario
+    user.is_active = True
+    
+    # Matrícula automática al curso por defecto (Course ID 1)
+    course = db.query(Course).filter(Course.id == 1).first()
+    if course:
+        existing_enrollment = (
+            db.query(Enrollment)
+            .filter(Enrollment.user_id == user_id, Enrollment.course_id == 1)
+            .first()
+        )
+        if not existing_enrollment:
+            enrollment = Enrollment(user_id=user_id, course_id=1)
+            db.add(enrollment)
+    
+    db.commit()
+
+    print(f"[ADMIN] Usuario aprobado: {user.email} (id={user.id})")
+    return {
+        "message": f"Usuario '{user.full_name}' aprobado y matriculado exitosamente.",
+        "user_id": user.id,
+        "email": user.email,
     }

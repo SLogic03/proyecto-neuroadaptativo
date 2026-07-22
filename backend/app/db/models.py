@@ -58,6 +58,7 @@ class User(Base):
         nullable=False,
         default=UserRole.student,
     )
+    student_id = Column(String(50), nullable=True, unique=True)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(
         DateTime(timezone=True),
@@ -92,6 +93,7 @@ class Course(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     content_data = Column(Text, nullable=True)
+    is_adaptive = Column(Boolean, nullable=False, default=True)
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -136,6 +138,9 @@ class Enrollment(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+    current_chapter_index = Column(Integer, nullable=False, default=0)
+    completed_quizzes = Column(Text, nullable=False, default="[]")
+    time_spent_seconds = Column(Integer, nullable=False, default=0)
 
     # Restricción única: un usuario no puede inscribirse dos veces al mismo curso
     __table_args__ = (
